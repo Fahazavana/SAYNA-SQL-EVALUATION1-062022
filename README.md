@@ -5,5 +5,3 @@
 3) biblio_eer.mwb : diagram EER générer avc MysqlWorkbench 
 4) Evaluation.pdf résultat des question
 
-
-
