@@ -1,0 +1,651 @@
+\documentclass[11]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[a4paper,left=10mm,right=10mm,top=10mm,bottom=10mm]{geometry}
+
+\usepackage[french]{babel}
+
+\usepackage{minted}
+\usepackage{xcolor}
+\usemintedstyle{vim}
+\definecolor{bg}{rgb}{0,0,0}
+\begin{document}
+
+\section{Analyse et correction de la base de données}
+
+\subsection{Chargement et Correction apporté à Biblio\_base.mysql}
+
+Ordonner l'ordre de la création des tables pour eviter les erreur
+suivant :
+
+\begin{itemize}
+	\item Error Code: 1824. Failed to open the referenced table `oeuvres'
+	\item Error Code: 1824. Failed to open the referenced table `adherents'
+	\item Error Code: 1824. Failed to open the referenced table `livres'
+\end{itemize}
+
+
+Ainsi l'ordre de création des tables sera :
+\begin{enumerate}
+	\item oeuvres
+	\item adherants
+	\item livres
+	\item emprunter
+\end{enumerate}
+
+\begin{minted}[bgcolor=bg]{mysql}
+DROP DATABASE IF EXISTS biblio;
+CREATE DATABASE biblio;
+
+USE biblio;
+
+CREATE TABLE oeuvres(
+	NO 		integer primary key auto_increment,
+	titre 		varchar(150) not null,
+	auteur 		varchar(100),
+	annee		integer,
+	genre		varchar(30)
+) ENGINE InnoDB;
+
+CREATE TABLE adherents (
+	NA		INT PRIMARY KEY AUTO_INCREMENT,
+	nom		VARCHAR(30) not null,
+	prenom		VARCHAR(30),
+	adr		VARCHAR(100) not null,
+	tel		CHAR(10)
+) ENGINE InnoDB;
+
+CREATE TABLE livres (
+	NL		integer primary key auto_increment,
+	editeur		varchar(50),
+	NO		integer not null, foreign key(NO) references oeuvres(NO)
+) ENGINE InnoDB;
+
+CREATE TABLE emprunter (
+	NL		integer not null, foreign key(NL) references livres(NL),
+	dateEmp		date not null,
+	dureeMax	integer not null,
+	dateRet 	date,
+	NA		integer not null, foreign key(NA) references adherents(NA),
+	primary key (NL, dateEmp),
+	index(dateEmp)
+) ENGINE InnoDB;
+\end{minted}
+
+\begin{minted}[bgcolor=bg]{mysql}
+INSERT INTO oeuvres VALUES 
+	(1,'Narcisse et Goldmund','Hermann HESSE', 1930, 'Roman'),
+	(2,'Bérénice','Jean RACINE', 1670, 'Théâtre'),
+	(3,'Prolégomènes à  toute métaphysique future','Emmanuel KANT', 1783, 'Philosophie'),
+	(4,'Mon coeur mis à nu','Charles BAUDELAIRE', 1887, 'Journal'),
+	(5,'Voyage au bout de la nuit','Louis-Ferdinand CELINE', 1932, 'Roman'),
+	(6,'Les possédés','Fedor DOSTOIEVSKI', 1872, 'Roman'),
+	(7,'Le Rouge et le Noir','STENDHAL', 1830, 'Roman'),
+	(8,'Alcibiade','Jacqueline de ROMILLY', 1995, 'Roman'),
+	(9,'Monsieur Teste','Paul VALERY', 1926, 'Roman'),
+	(10,'Lettres de Gourgounel','Kenneth WHITE', 1979, 'Récit'),
+	(11,'Lettres à un jeune poète','Rainer Maria RILKE', 1929, 'Lettre'),
+	(12,'Logique sans peine','Lewis CAROLL', 1887, 'Logique'),
+	(13,'L''éthique','Baruch SPINOZA', 1677, 'Philosophie'),
+	(14,'Sur le rêve','Sigmund FREUD', 1900, 'Philosophie'),
+	(15,'Sens et dénotation','Gottlob FREGE', 1892, 'Philosophie'),
+	(16,'Penser la logique','Gilbert HOTTOIS', 1989, 'Philosophie'),
+	(17,'Au coeur des ténèbres','Joseph CONRAD',1899, 'Roman'),
+	(18,'Jan Karski','Yannick HAENEL', 2009, 'Roman');	
+\end{minted}
+
+\begin{minted}[bgcolor=bg]{mysql}
+INSERT INTO adherents VALUES 
+	(1,'Lecoeur','Jeanette','16 rue de la République, 75010 Paris','0145279274'),
+	(2,'Lecoeur','Philippe','16 rue de la République, 75010 Paris','0145279274'),
+	(3,'Dupont','Yvan','73 rue Lamarck, 75018 Paris','0163538294'),
+	(4,'Mercier','Claude','155 avenue Parmentier, 75011 Paris','0136482736'),
+	(5,'Léger','Marc','90 avenue du Maine, 75014 Paris','0164832947'),
+	(6,'Martin','Laure','51 boulevard Diderot, 75012 Paris','0174693277'),
+	(7,'Crozier','Martine','88 rue des Portes Blanches, 75018 Paris','0146829384'),
+	(8,'Lebon','Clément','196 boulevard de Sebastopol, 75001 Paris','0132884739'),
+	(9,'Dufour','Jacques','32 rue des Alouettes, 75003 Paris','0155382940'),
+	(10,'Dufour','Antoine','32 rue des Alouettes, 75003 Paris','0155382940'),
+	(11,'Dufour','Stéphanie','32 rue des Alouettes, 75003 Paris','0155382940'),
+	(12,'Raymond','Carole','35 rue Oberkampf, 75011 Paris','0153829402'),
+	(13,'Durand','Albert','4 rue Mandar, 75002 Paris','0642374021'),
+	(14,'Wilson','Paul','12 rue Paul Vaillant Couturier, 92400 Montrouge','0642327407'),
+	(15,'Grecault','Philippe','15 rue de la Roquette, 75012 Paris','0132762983'),
+	(16,'Carre','Stéphane','51 boulevard Diderot, 75012 Paris','0174693277'),
+	(17,'Johnson','Astrid','3 rue Léon Blum, 75002 Paris','0143762947'),
+	(18,'Mirou','Caroline','2 square Mirabeau, 75011 Paris','0163827399'),
+	(19,'Espelette','Jean-Jacques','141 avenue de France, 75019 Paris','0134887264'),
+	(20,'Despentes','Anthony','56 boulevard de la Villette, 75019 Paris','0133889463'),
+	(21,'Terlu','Véronique','45 rue des Batignolles, 75020 Paris','0165998372'),
+	(22,'Rihour','Cécile','7 rue Montorgueil, 75002 Paris','0166894754'),
+	(23,'Franchet','Pierre','160 rue Montmartre, 75009 Paris','0633628549'),
+	(24,'Trochet','Ernest','34 rue de l''Esperance, 75008 Paris','0638295563'),
+	(25,'Gainard','Simon','55 rue Desnouettes, 75015 Paris','0174928934'),
+	(26,'Touche','Johanna','14 rue du Bac, 75006 Paris','0619384065'),
+	(27,'Cornu','Sylvain','22 rue Mouffetard, 75005 Paris','0184927489'),
+	(28,'Frederic','Cyril','15 rue du Simplon, 75018 Paris','0173625492'),
+	(29,'Crestard','Cedric','5 rue Doudeauville, 75018 Paris','0629485700'),
+	(30,'Le Bihan','Karine','170 bis rue Ordener, 75018 Paris','0638995221');
+\end{minted}
+\newpage
+\begin{minted}[bgcolor=bg]{mysql}
+INSERT INTO livres VALUES
+	(1,'GF',1),
+	(2,'FOLIO',2),
+	(3,'HACHETTE',3),
+	(4,'GF',4),
+	(5,'FOLIO',5),
+	(6,'FOLIO',6),
+	(7,'GF',7),
+	(8,'FOLIO',8),
+	(9,'HACHETTE',9),
+	(10,'GF',10),
+	(11,'HACHETTE',11),
+	(12,'FOLIO',12),
+	(13,'GF',13),
+	(14,'FOLIO',14),
+	(15,'HACHETTE',15),
+	(16,'HACHETTE',16),
+	(17,'GF',1),
+	(18,'FOLIO',2),
+	(19,'HACHETTE',2),
+	(20,'FOLIO',4),
+	(21,'GF',5),
+	(22,'HACHETTE',4),
+	(23,'HACHETTE',7),
+	(24,'FOLIO',8),
+	(25,'GF',1),
+	(26,'HACHETTE',10),
+	(27,'FOLIO',11),
+	(28,'FOLIO',12),
+	(29,'GF',1),
+	(30,'HACHETTE',14),
+	(31,'FOLIO',17),
+	(32,'GALLIMARD',18);
+\end{minted}
+\newpage
+\begin{minted}[bgcolor=bg]{mysql}
+INSERT INTO emprunter VALUES
+	(1,from_days(to_days(current_date)-350),21,from_days(to_days(current_date)-349),26),
+	(4,from_days(to_days(current_date)-323),21,from_days(to_days(current_date)-310),4),
+	(26,from_days(to_days(current_date)-315),21,from_days(to_days(current_date)-318),9),
+	(25,from_days(to_days(current_date)-311),21,from_days(to_days(current_date)-293),1),
+	(12,from_days(to_days(current_date)-300),21,from_days(to_days(current_date)-1290),7),
+	(20,from_days(to_days(current_date)-283),21,from_days(to_days(current_date)-282),27),
+	(10,from_days(to_days(current_date)-273),21,from_days(to_days(current_date)-250),7),
+	(4,from_days(to_days(current_date)-232),14,from_days(to_days(current_date)-228),12),
+	(24,from_days(to_days(current_date)-226),14,from_days(to_days(current_date)-220),26),
+	(8,from_days(to_days(current_date)-201),14,from_days(to_days(current_date)-183),13),
+	(6,from_days(to_days(current_date)-199),14,from_days(to_days(current_date)-194),3),
+	(10,from_days(to_days(current_date)-169),14,from_days(to_days(current_date)-157),8),
+	(1,from_days(to_days(current_date)-153),14,from_days(to_days(current_date)-142),3),
+	(15,from_days(to_days(current_date)-146),14,from_days(to_days(current_date)-138),10),
+	(1,from_days(to_days(current_date)-106),14,from_days(to_days(current_date)-101),2),
+	(4,from_days(to_days(current_date)-103),14,from_days(to_days(current_date)-93),5),
+	(18,from_days(to_days(current_date)-86),14,from_days(to_days(current_date)-79),3),
+	(8,from_days(to_days(current_date)-76),14,from_days(to_days(current_date)-70),18),
+	(2,from_days(to_days(current_date)-37),14,from_days(to_days(current_date)-28),4),
+	(1,from_days(to_days(current_date)-28),14,from_days(to_days(current_date)-23),1),
+	(3,from_days(to_days(current_date)-21),14,from_days(to_days(current_date)-17),3),
+	(20,from_days(to_days(current_date)-24),14,from_days(to_days(current_date)-8),9),
+	(21,from_days(to_days(current_date)-23),14,from_days(to_days(current_date)-11),14),
+	(2,from_days(to_days(current_date)-10),14, NULL,28),
+	(9,from_days(to_days(current_date)-10),14, NULL,28),
+	(14,from_days(to_days(current_date)-9),14, NULL,1),
+	(16,from_days(to_days(current_date)-9),14, NULL,1),
+	(5,from_days(to_days(current_date)-5),14, NULL,16),
+	(29,from_days(to_days(current_date)-395),14, NULL,27),
+	(11,from_days(to_days(current_date)-30),14, NULL,22),
+	(31,from_days(to_days(current_date)-1),14, NULL,20),
+	(21,from_days(to_days(current_date)-1),14, NULL,20),
+	(32,from_days(to_days(current_date)-1),14, NULL,20);
+\end{minted}
+
+
+\subsection{Nombres de tuples après l'execution du script:}
+Pour la table oeuvres :
+\begin{minted}[bgcolor=bg]{mysql}
+SELECT COUNT(*) FROM `biblio`.`oeuvres`;
++----------+
+| COUNT(*) |
++----------+
+|       18 |
++----------+
+1 row in set (0,04 sec)
+\end{minted}
+Pour la table adherents :
+\begin{minted}[bgcolor=bg]{mysql}
+SELECT COUNT(*) FROM `biblio`.`adherents`;
++----------+
+| COUNT(*) |
++----------+
+|       30 |
++----------+
+1 row in set (0,04 sec)
+\end{minted}
+Pour la table livres :
+\begin{minted}[bgcolor=bg]{mysql}
+SELECT COUNT(*) FROM `biblio`.`livres`;
+
++----------+
+| COUNT(*) |
++----------+
+|       32 |
++----------+
+1 row in set (0,01 sec)
+\end{minted}
+
+Pour la table emprunter :
+
+\begin{minted}[bgcolor=bg]{mysql}
+SELECT COUNT(*) FROM `biblio`.`emprunter`;
++----------+
+| COUNT(*) |
++----------+
+|       33 |
++----------+
+1 row in set (0,05 sec)	
+\end{minted}
+
+\textbf{Ainsi pour obtenir le nombre totale de Tuple on fait :}
+
+\begin{minted}[bgcolor=bg]{mysql}
+SELECT 
+	(SELECT COUNT(*) FROM `biblio`.`oeuvres`) 
+	+
+	(SELECT COUNT(*) FROM `biblio`.`adherents`)
+	+
+	(SELECT COUNT(*) FROM `biblio`.`livres`)
+	+
+	(SELECT COUNT(*) FROM `biblio`.`emprunter`)
+	AS `Nombres de tuples`;
+
++-------------------+
+| Nombres de tuples |
++-------------------+
+|               113 |
++-------------------+
+1 row in set (0,80 sec)
+\end{minted}
+
+\subsection{Nombre d'attribut :}
+\begin{itemize}
+	\item Pour la table oeuvres :
+	      \begin{minted}[bgcolor=bg]{mysql}
+DESCRIBE `biblio`.`oeuvres`;
+
++--------+--------------+------+-----+---------+----------------+
+| Field  | Type         | Null | Key | Default | Extra          |
++--------+--------------+------+-----+---------+----------------+
+| NO     | int          | NO   | PRI | NULL    | auto_increment |
+| titre  | varchar(150) | NO   |     | NULL    |                |
+| auteur | varchar(100) | YES  |     | NULL    |                |
+| annee  | int          | YES  |     | NULL    |                |
+| genre  | varchar(30)  | YES  |     | NULL    |                |
++--------+--------------+------+-----+---------+----------------+
+5 rows in set (0,02 sec)
+\end{minted}
+	      On a donc 5 attributs pour la table oeuvre.
+
+	\item Pour la table adherents :
+	      \begin{minted}[bgcolor=bg]{mysql}
+DESCRIBE `biblio`.`adherents`;
+
++--------+--------------+------+-----+---------+----------------+
+| Field  | Type         | Null | Key | Default | Extra          |
++--------+--------------+------+-----+---------+----------------+
+| NA     | int          | NO   | PRI | NULL    | auto_increment |
+| nom    | varchar(30)  | NO   |     | NULL    |                |
+| prenom | varchar(30)  | YES  |     | NULL    |                |
+| adr    | varchar(100) | NO   |     | NULL    |                |
+| tel    | char(10)     | YES  |     | NULL    |                |
++--------+--------------+------+-----+---------+----------------+
+5 rows in set (0,00 sec)
+\end{minted}
+
+	      Donc on a 5 pour la tables adherents.
+	\item Pour la table livres :
+	      \begin{minted}[bgcolor=bg]{mysql}
+DESCRIBE `biblio`.`livres`;
+
++---------+-------------+------+-----+---------+----------------+
+| Field   | Type        | Null | Key | Default | Extra          |
++---------+-------------+------+-----+---------+----------------+
+| NL      | int         | NO   | PRI | NULL    | auto_increment |
+| editeur | varchar(50) | YES  |     | NULL    |                |
+| NO      | int         | NO   | MUL | NULL    |                |
++---------+-------------+------+-----+---------+----------------+
+3 rows in set (0,03 sec)
+\end{minted}
+	      Donc on a 3 attributs por la table livres.
+
+	\item Pour la table emprunter :
+	      \begin{minted}[bgcolor=bg]{mysql}
+DESCRIBE `biblio`.`emprunter`;
+
++----------+------+------+-----+---------+-------+
+| Field    | Type | Null | Key | Default | Extra |
++----------+------+------+-----+---------+-------+
+| NL       | int  | NO   | PRI | NULL    |       |
+| dateEmp  | date | NO   | PRI | NULL    |       |
+| dureeMax | int  | NO   |     | NULL    |       |
+| dateRet  | date | YES  |     | NULL    |       |
+| NA       | int  | NO   | MUL | NULL    |       |
++----------+------+------+-----+---------+-------+
+5 rows in set (0,07 sec)
+\end{minted}
+	      Donc on a 5 attributs pour la table emprunter
+\end{itemize}
+\subsection{Liste des clé Primaire}
+
+Grace à la requette suivante on obtient les clé primaire:
+
+\begin{minted}[bgcolor=bg]{mysql}
+SELECT COLUMN_NAME AS PRIMARY_KEY
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_SCHEMA = 'biblio'
+AND TABLE_NAME = '<nom_table>' -- Nom de la tables
+AND COLUMN_KEY = 'PRI';
+\end{minted}
+
+Pour la table oeuvres : NO
+
+\begin{minted}[bgcolor=bg]{mysql}
++-------------+
+| PRIMARY_KEY |
++-------------+
+| NO          |
++-------------+
+1 row in set (0,00 sec)
+\end{minted}
+
+Pour la table adherents : NA
+
+\begin{minted}[bgcolor=bg]{mysql}
++-------------+
+| PRIMARY_KEY |
++-------------+
+| NA          |
++-------------+
+1 row in set (0,00 sec)
+\end{minted}
+
+Pour la table livres : NL
+
+\begin{minted}[bgcolor=bg]{mysql}
++-------------+
+| PRIMARY_KEY |
++-------------+
+| NL          |
++-------------+
+1 row in set (0,00 sec)
+\end{minted}
+
+Pour la table emprunter : NL,dateEmp
+
+\begin{minted}[bgcolor=bg]{mysql}
++-------------+
+| PRIMARY_KEY |
++-------------+
+| NL          |
+| dateEmp     |
++-------------+
+2 rows in set (0,00 sec)
+\end{minted}
+
+\newpage
+\section{Intéraction avec la base de donné}
+
+Avant de commencer on vas crée des vues pour faciliter les recherches et la manipulation de la base de donner.
+\textbf{Vue Livres - Oeuvres} : permet de visualier les relation entres les deux tables
+\begin{minted}[bgcolor=bg]{mysql}
+CREATE 
+	ALGORITHM = UNDEFINED 
+	DEFINER = `root`@`localhost` 
+	SQL SECURITY DEFINER
+VIEW `Livres_Oeuvres` AS
+	SELECT 
+		`livres`.`NL` AS `NL`,
+		`oeuvres`.`NO` AS `NO`,
+		`oeuvres`.`titre` AS `titre`,
+		`oeuvres`.`auteur` AS `auteur`,
+		`livres`.`editeur` AS `editeur`,
+		`oeuvres`.`annee` AS `annee`,
+		`oeuvres`.`genre` AS `genre`
+	FROM
+		(`livres`
+		JOIN `oeuvres` ON ((`livres`.`NO` = `oeuvres`.`NO`)))
+	ORDER BY `livres`.`NL`;
+\end{minted}
+\textbf{Vue Emprunter - Adherent } : pour visualiser les adhérent qui on emprunter des livres
+\begin{minted}[bgcolor=bg]{mysql}
+CREATE 
+    ALGORITHM = UNDEFINED 
+    DEFINER = `root`@`localhost` 
+    SQL SECURITY DEFINER
+VIEW `Adherent_Emprunt` AS
+SELECT 
+    `emprunter`.`NL` AS `NL`,
+    `emprunter`.`dateEmp` AS `dateEmp`,
+    `emprunter`.`dureeMax` AS `dureeMax`,
+    `emprunter`.`dateRet` AS `dateRet`,
+    `adherents`.`NA` AS `NA`,
+    `adherents`.`nom` AS `nom`,
+    `adherents`.`prenom` AS `prenom`
+FROM
+    (`emprunter`
+    JOIN `adherents`)
+WHERE
+    (`emprunter`.`NA` = `adherents`.`NA`)
+ORDER BY `emprunter`.`NL` , `emprunter`.`dateEmp`
+\end{minted}
+
+\textbf{Vue Livre - Oeuvre - Adherent - Emprunt }: Pour une vue synthétisant les relation entres les 4  tables;
+\begin{minted}[bgcolor=bg]{mysql}
+CREATE 
+    ALGORITHM = UNDEFINED 
+    DEFINER = `root`@`localhost` 
+    SQL SECURITY DEFINER
+VIEW `Livre_Oeuvres_Adherent_Emprunt` AS
+    SELECT 
+        `Adherent_Emprunt`.`dateEmp` AS `dateEmp`,
+        `Adherent_Emprunt`.`dateRet` AS `dateRet`,
+        `Livres_Oeuvres`.`NL` AS `NL`,
+        `Livres_Oeuvres`.`titre` AS `titre`,
+		`Adherent_Emprunt`.`NA` AS `NA`,
+        `Adherent_Emprunt`.`nom` AS `nom`,
+        `Adherent_Emprunt`.`prenom` AS `prenom`
+    FROM
+        (`Livres_Oeuvres`
+        JOIN `Adherent_Emprunt` ON ((`Livres_Oeuvres`.`NL` = `Adherent_Emprunt`.`NL`)))
+ORDER BY `Adherent_Emprunt`.`dateEmp` , `Livres_Oeuvres`.`NL`
+\end{minted}
+
+\subsection{Quels sont les livres actuellement empruntés ?}
+
+\begin{minted}[bgcolor=bg]{mysql}
+SELECT 	DISTINCT(emprunter.NL),titre,auteur,editeur,annee 
+		FROM Livres_Oeuvres 
+		INNER JOIN emprunter 
+		ON emprunter.NL=Livres_Oeuvres.NL 
+ORDER BY NL;
+
++----+------------------------------------------+------------------------+-----------+-------+
+| NL | titre                                    | auteur                 | editeur   | annee |
++----+------------------------------------------+------------------------+-----------+-------+
+|  1 | Narcisse et Goldmund                     | Hermann HESSE          | GF        |  1930 |
+|  2 | Bérénice                                 | Jean RACINE            | FOLIO     |  1670 |
+|  3 | Prolégomènes à  toute métaphysique future| Emmanuel KANT          | HACHETTE  |  1783 |
+|  4 | Mon coeur mis à nu                       | Charles BAUDELAIRE     | GF        |  1887 |
+|  5 | Voyage au bout de la nuit                | Louis-Ferdinand CELINE | FOLIO     |  1932 |
+|  6 | Les possédés                             | Fedor DOSTOIEVSKI      | FOLIO     |  1872 |
+|  8 | Alcibiade                                | Jacqueline de ROMILLY  | FOLIO     |  1995 |
+|  9 | Monsieur Teste                           | Paul VALERY            | HACHETTE  |  1926 |
+| 10 | Lettres de Gourgounel                    | Kenneth WHITE          | GF        |  1979 |
+| 11 | Lettres à un jeune poète                 | Rainer Maria RILKE     | HACHETTE  |  1929 |
+| 12 | Logique sans peine                       | Lewis CAROLL           | FOLIO     |  1887 |
+| 14 | Sur le rêve                              | Sigmund FREUD          | FOLIO     |  1900 |
+| 15 | Sens et dénotation                       | Gottlob FREGE          | HACHETTE  |  1892 |
+| 16 | Penser la logique                        | Gilbert HOTTOIS        | HACHETTE  |  1989 |
+| 18 | Bérénice                                 | Jean RACINE            | FOLIO     |  1670 |
+| 20 | Mon coeur mis à nu                       | Charles BAUDELAIRE     | FOLIO     |  1887 |
+| 21 | Voyage au bout de la nuit                | Louis-Ferdinand CELINE | GF        |  1932 |
+| 24 | Alcibiade                                | Jacqueline de ROMILLY  | FOLIO     |  1995 |
+| 25 | Narcisse et Goldmund                     | Hermann HESSE          | GF        |  1930 |
+| 26 | Lettres de Gourgounel                    | Kenneth WHITE          | HACHETTE  |  1979 |
+| 29 | Narcisse et Goldmund                     | Hermann HESSE          | GF        |  1930 |
+| 31 | Au coeur des ténèbres                    | Joseph CONRAD          | FOLIO     |  1899 |
+| 32 | Jan Karski                               | Yannick HAENEL         | GALLIMARD |  2009 |
++----+------------------------------------------+------------------------+-----------+-------+
+23 rows in set (0,00 sec)
+\end{minted}
+
+\subsection{Quels sont les livres empruntés par Jeannette Lecoeur ? Vérifier dans
+	la réponse qu'il n'y a pas d'homonymes.}
+
+
+\begin{minted}[bgcolor=bg]{mysql}
+SELECT * FROM biblio.Livre_Oeuvres_Adherent_Emprunt
+		WHERE nom='Lecoeur' and prenom='Jeannette';
+
+Empty set (0,00 sec)
+\end{minted}
+
+Aucun Résultat;
+
+Par contre avec : Jeanette Lecoeur
+\begin{minted}[bgcolor=bg]{mysql}
+SELECT * FROM biblio.Livre_Oeuvres_Adherent_Emprunt WHERE nom='Lecoeur' and prenom='Jeanette';
+
++------------+------------+----+----------------------+-----------------+---------+----------+
+| dateEmp    | dateRet    | NL | titre                | auteur          | nom     | prenom   |
++------------+------------+----+----------------------+-----------------+---------+----------+
+| 2021-08-20 | 2021-09-07 | 25 | Narcisse et Goldmund | Hermann HESSE   | Lecoeur | Jeanette |
+| 2022-05-30 | 2022-06-04 |  1 | Narcisse et Goldmund | Hermann HESSE   | Lecoeur | Jeanette |
+| 2022-06-18 | NULL       | 14 | Sur le rêve          | Sigmund FREUD   | Lecoeur | Jeanette |
+| 2022-06-18 | NULL       | 16 | Penser la logique    | Gilbert HOTTOIS | Lecoeur | Jeanette |
++------------+------------+----+----------------------+-----------------+---------+----------+
+4 rows in set (0,00 sec)
+\end{minted}
+
+\subsection{Quels sont tous les livres empruntés en septembre 2009}
+\begin{minted}[bgcolor=bg]{mysql}
+SELECT dateEmp,DISTINCT(NL),titre,auteur FROM biblio.Livre_Oeuvres_Adherent_Emprunt
+WHERE dateEmp BETWEEN '2009-09-01' AND '2009-09-30';
+
+Empty set (0,00 sec)
+\end{minted}
+
+\subsection{Tous les adhérents qui ont emprunté un livre de Fedor Dostoievski.}
+\begin{minted}[bgcolor=bg]{mysql}
+SELECT	dateEmp,NL,titre,auteur,NA,nom,prenom 
+		FROM biblio.Livre_Oeuvres_Adherent_Emprunt 
+		WHERE auteur='Fedor DOSTOIEVSKI';
+
++------------+----+----------------+-------------------+----+--------+--------+
+| dateEmp    | NL | titre          | auteur            | NA | nom    | prenom |
++------------+----+----------------+-------------------+----+--------+--------+
+| 2021-12-10 |  6 | Les possédés   | Fedor DOSTOIEVSKI |  3 | Dupont | Yvan   |
++------------+----+----------------+-------------------+----+--------+--------+
+1 row in set (0,00 sec)
+\end{minted}
+
+\subsection{ Un nouvel adhérent vient de s’inscrire : Olivier DUPOND, 76, quai de la Loire,
+	75019 Paris, téléphone : 0102030405}
+\begin{minted}[bgcolor=bg]{mysql}
+INSERT INTO `biblio`.`adherents` (`nom`, `prenom`, `adr`, `tel`) 
+	VALUES ('Dupon', 'Olivier', '76 quai de la Loire, 75019 Paris', '0102030405');
+
+Query OK, 1 row affected (0,18 sec)
+\end{minted}
+
+
+\subsection{Martine CROZIER vient d’emprunter « Au coeur des ténèbres » que vous venez
+	d’ajouter et « Le rouge et le noir » chez Hachette, livre n°23. Faire les mises à
+	jour de la BD.}
+
+Pour Faire cela nos allons faire les requettes suivantes dans l'ordre
+\begin{enumerate}
+
+	\item  Chercher le NA de Martine CROZIER,
+
+	      \begin{minted}[bgcolor=bg]{mysql}
+SELECT * FROM adherents WHERE nom='Crozier' and prenom='Martine';
+
++----+---------+---------+-----------------------------------------+------------+
+| NA | nom     | prenom  | adr                                     | tel        |
++----+---------+---------+-----------------------------------------+------------+
+|  7 | Crozier | Martine | 88 rue des Portes Blanches, 75018 Paris | 0146829384 |
++----+---------+---------+-----------------------------------------+------------+
+1 row in set (0,01 sec)
+\end{minted}
+	\item Trouver les deux Livres à emprunter
+	      \begin{minted}[bgcolor=bg]{mysql}
+SELECT * FROM biblio.Livres_Oeuvres
+	WHERE titre='Au coeur des ténèbres' 
+	OR 
+	(titre='Le rouge et le noir' AND editeur='Hachette' AND NL=23);
+	
++----+----+-------------------------+---------------+----------+-------+-------+
+| NL | NO | titre                   | auteur        | editeur  | annee | genre |
++----+----+-------------------------+---------------+----------+-------+-------+
+| 23 |  7 | Le Rouge et le Noir     | STENDHAL      | HACHETTE |  1830 | Roman |
+| 31 | 17 | Au coeur des ténèbres   | Joseph CONRAD | FOLIO    |  1899 | Roman |
++----+----+-------------------------+---------------+----------+-------+-------+
+2 rows in set (0,00 sec)
+\end{minted}
+	\item Insérér le NA de l'empruntuer, le NL des livres à emprunter,la date d'emprunt dateEmp et la durée maximum dureeMax d'emprunt
+	      \begin{minted}[bgcolor=bg]{mysql}
+INSERT INTO `biblio`.`emprunter` (`NL`, `dateEmp`, `dureeMax`, `NA`) 
+	VALUES 
+		('31', '2022-06-28', '14', '7'),
+		('23', '2022-06-28', '14', '7');
+
+	Query OK, 2 rows affected (0,17 sec)
+	Records: 2  Duplicates: 0  Warnings: 0
+\end{minted}
+\end{enumerate}
+
+
+\subsection{ M. Cyril FREDERIC ramène les livres qu’il a empruntés. Faire la mise à jour de
+	la BD.}
+\begin{enumerate}
+	\item On cherch les livres qu'il a emprunter
+	      \begin{minted}[bgcolor=bg]{mysql}
+SELECT 
+		*
+FROM
+	biblio.Livre_Oeuvres_Adherent_Emprunt
+	WHERE 
+		nom='Frederic' AND prenom='Cyril';
+
++------------+---------+----+----------------+-------------+----+----------+--------+
+| dateEmp    | dateRet | NL | titre          | auteur      | NA | nom      | prenom |
++------------+---------+----+----------------+-------------+----+----------+--------+
+| 2022-06-17 | NULL    |  2 | Bérénice       | Jean RACINE | 28 | Frederic | Cyril  |
+| 2022-06-17 | NULL    |  9 | Monsieur Teste | Paul VALERY | 28 | Frederic | Cyril  |
++------------+---------+----+----------------+-------------+----+----------+--------+
+2 rows in set (0,00 sec)
+		\end{minted}
+	      Ainsi on a les deux clé primire pour mettre à jour la table emprunt : (2,2022-06-17) et (9,2022-06-17)
+
+	\item  On met à jour les deux enregitements correspondant avec dateRet='2022-06-28'
+	      \begin{minted}[bgcolor=bg]{mysql}
+UPDATE `biblio`.`emprunter` SET `dateRet` = '2022-06-28' 
+	WHERE (`NL` = '2') and (`dateEmp` = '2022-06-17');
+
+Query OK, 1 row affected (0,21 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+			
+
+UPDATE `biblio`.`emprunter` SET `dateRet` = '2022-06-28' 
+	WHERE (`NL` = '9') and (`dateEmp` = '2022-06-17');
+
+Query OK, 1 row affected (0,13 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+\end{minted}
+\end{enumerate}
+
+\end{document}

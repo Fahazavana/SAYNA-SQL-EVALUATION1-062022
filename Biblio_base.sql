@@ -1,7 +1,7 @@
-drop database if exists biblio;
-create database biblio;
+DROP DATABASE IF EXISTS biblio;
+CREATE DATABASE biblio;
 
-use biblio;
+USE biblio;
 
 CREATE TABLE oeuvres(
 	NO 		integer primary key auto_increment,

@@ -1,2 +1,11 @@
 *.bak
 .vscode/
+*.aux
+*.log
+*.synctex.gz
+*.tmp.tex
+_minted-Evaluation/
+*.bak0
+*.fdb_latexmk
+*.fls
+*.xdv
