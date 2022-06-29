@@ -5,7 +5,7 @@
 *.synctex.gz
 *.tmp.tex
 _minted-Evaluation/
-*.bak0
+*.bak*
 *.fdb_latexmk
 *.fls
 *.xdv
