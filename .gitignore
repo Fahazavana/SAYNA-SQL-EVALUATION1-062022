@@ -9,3 +9,5 @@ _minted-Evaluation/
 *.fdb_latexmk
 *.fls
 *.xdv
+*.lol
+*.toc

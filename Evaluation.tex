@@ -1,19 +1,28 @@
 \documentclass{article}
 \usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
 \usepackage{lmodern}
+\usepackage{hyperref}
 \usepackage[a4paper,left=10mm,right=10mm,top=15mm,bottom=15mm]{geometry}
 
 \usepackage[french]{babel}
 
 \usepackage{minted}
 \usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{etoolbox}
+\parindent=0pt
 \usemintedstyle[mysql]{default}
 \definecolor{bgcode}{rgb}{0.9,0.9,0.9}
-\definecolor{bgconsole}{rgb}{0.1,0.1,0.}
+\definecolor{bgconsole}{rgb}{0.0,0.0,0.0}
 \usemintedstyle[console]{rrt}
-\renewcommand{\listingscaption}[1][Code]{#1}
+\usepackage{xpatch}
+\xpretocmd{\inputminted}{\begin{tcolorbox}}{}{}%
+\xapptocmd{\inputminted}{\end{tcolorbox}}{}{}%
 
+\BeforeBeginEnvironment{minted}{\begin{tcolorbox}}%
+\AfterEndEnvironment{minted}{\end{tcolorbox}}%
+\renewcommand{\listingscaption}[1][Code]{#1}
+\renewcommand{\listoflistingscaption}{Liste des codes}
 
 \title{Évaluation Intermédiaire - MySQL,base de donnée d’une librairie}
 \author{Jean Lucien RANDRIANANTENAINA}
@@ -21,6 +30,11 @@
 \begin{document}
 
 \maketitle
+\newpage
+\tableofcontents
+\newpage
+\listoflistings
+\newpage
 
 \section{Analyse et correction de la base de données}
 
@@ -45,200 +59,65 @@ Ainsi l'ordre de création des tables sera :
 \end{enumerate}
 
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
-DROP DATABASE IF EXISTS biblio;
-CREATE DATABASE biblio;
-
-USE biblio;
-
-CREATE TABLE oeuvres(
-NO 		INTEGER PRIMARY KEY AUTO_INCREMENT,
-titre 		VARCHAR(150) NOT NULL,
-auteur 		VARCHAR(100),
-annee		INTEGER,
-genre		VARCHAR(30)
-) ENGINE InnoDB;
-
-CREATE TABLE adherents (
-	NA		INT PRIMARY KEY AUTO_INCREMENT,
-	nom		VARCHAR(30) not null,
-	prenom		VARCHAR(30),
-	adr		VARCHAR(100) not null,
-	tel		CHAR(10)
-) ENGINE InnoDB;
-
-CREATE TABLE livres (
-	NL		integer primary key auto_increment,
-	editeur		varchar(50),
-	NO		integer not null, foreign key(NO) references oeuvres(NO)
-) ENGINE InnoDB;
-
-CREATE TABLE emprunter (
-	NL		integer not null, foreign key(NL) references livres(NL),
-	dateEmp		date not null,
-	dureeMax	integer not null,
-	dateRet 	date,
-	NA		integer not null, foreign key(NA) references adherents(NA),
-	primary key (NL, dateEmp),
-	index(dateEmp)
-) ENGINE InnoDB;
-\end{minted}
-	\caption{Creation de la base de donné}
+\inputminted{mysql}{code/create_db.sql}
+\caption{Création de la base de donné  et changement de la base de donné courante}
 \end{listing}
 
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
-INSERT INTO oeuvres VALUES
-	(1,'Narcisse et Goldmund','Hermann HESSE', 1930, 'Roman'),
-	(2,'Bérénice','Jean RACINE', 1670, 'Théâtre'),
-	(3,'Prolégomènes à  toute métaphysique future','Emmanuel KANT', 1783, 'Philosophie'),
-	(4,'Mon coeur mis à nu','Charles BAUDELAIRE', 1887, 'Journal'),
-	(5,'Voyage au bout de la nuit','Louis-Ferdinand CELINE', 1932, 'Roman'),
-	(6,'Les possédés','Fedor DOSTOIEVSKI', 1872, 'Roman'),
-	(7,'Le Rouge et le Noir','STENDHAL', 1830, 'Roman'),
-	(8,'Alcibiade','Jacqueline de ROMILLY', 1995, 'Roman'),
-	(9,'Monsieur Teste','Paul VALERY', 1926, 'Roman'),
-	(10,'Lettres de Gourgounel','Kenneth WHITE', 1979, 'Récit'),
-	(11,'Lettres à un jeune poète','Rainer Maria RILKE', 1929, 'Lettre'),
-	(12,'Logique sans peine','Lewis CAROLL', 1887, 'Logique'),
-	(13,'L''éthique','Baruch SPINOZA', 1677, 'Philosophie'),
-	(14,'Sur le rêve','Sigmund FREUD', 1900, 'Philosophie'),
-	(15,'Sens et dénotation','Gottlob FREGE', 1892, 'Philosophie'),
-	(16,'Penser la logique','Gilbert HOTTOIS', 1989, 'Philosophie'),
-	(17,'Au coeur des ténèbres','Joseph CONRAD',1899, 'Roman'),
-	(18,'Jan Karski','Yannick HAENEL', 2009, 'Roman');	
-\end{minted}
-	\caption{Insertion de données dans la table oeuvres}
+\inputminted{mysql}{code/create_oeuvres.sql}
+\caption{Création de la table oeuvres}
 \end{listing}
 
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
-INSERT INTO adherents VALUES 
-	(1,'Lecoeur','Jeanette','16 rue de la République, 75010 Paris','0145279274'),
-	(2,'Lecoeur','Philippe','16 rue de la République, 75010 Paris','0145279274'),
-	(3,'Dupont','Yvan','73 rue Lamarck, 75018 Paris','0163538294'),
-	(4,'Mercier','Claude','155 avenue Parmentier, 75011 Paris','0136482736'),
-	(5,'Léger','Marc','90 avenue du Maine, 75014 Paris','0164832947'),
-	(6,'Martin','Laure','51 boulevard Diderot, 75012 Paris','0174693277'),
-	(7,'Crozier','Martine','88 rue des Portes Blanches, 75018 Paris','0146829384'),
-	(8,'Lebon','Clément','196 boulevard de Sebastopol, 75001 Paris','0132884739'),
-	(9,'Dufour','Jacques','32 rue des Alouettes, 75003 Paris','0155382940'),
-	(10,'Dufour','Antoine','32 rue des Alouettes, 75003 Paris','0155382940'),
-	(11,'Dufour','Stéphanie','32 rue des Alouettes, 75003 Paris','0155382940'),
-	(12,'Raymond','Carole','35 rue Oberkampf, 75011 Paris','0153829402'),
-	(13,'Durand','Albert','4 rue Mandar, 75002 Paris','0642374021'),
-	(14,'Wilson','Paul','12 rue Paul Vaillant Couturier, 92400 Montrouge','0642327407'),
-	(15,'Grecault','Philippe','15 rue de la Roquette, 75012 Paris','0132762983'),
-	(16,'Carre','Stéphane','51 boulevard Diderot, 75012 Paris','0174693277'),
-	(17,'Johnson','Astrid','3 rue Léon Blum, 75002 Paris','0143762947'),
-	(18,'Mirou','Caroline','2 square Mirabeau, 75011 Paris','0163827399'),
-	(19,'Espelette','Jean-Jacques','141 avenue de France, 75019 Paris','0134887264'),
-	(20,'Despentes','Anthony','56 boulevard de la Villette, 75019 Paris','0133889463'),
-	(21,'Terlu','Véronique','45 rue des Batignolles, 75020 Paris','0165998372'),
-	(22,'Rihour','Cécile','7 rue Montorgueil, 75002 Paris','0166894754'),
-	(23,'Franchet','Pierre','160 rue Montmartre, 75009 Paris','0633628549'),
-	(24,'Trochet','Ernest','34 rue de l''Esperance, 75008 Paris','0638295563'),
-	(25,'Gainard','Simon','55 rue Desnouettes, 75015 Paris','0174928934'),
-	(26,'Touche','Johanna','14 rue du Bac, 75006 Paris','0619384065'),
-	(27,'Cornu','Sylvain','22 rue Mouffetard, 75005 Paris','0184927489'),
-	(28,'Frederic','Cyril','15 rue du Simplon, 75018 Paris','0173625492'),
-	(29,'Crestard','Cedric','5 rue Doudeauville, 75018 Paris','0629485700'),
-	(30,'Le Bihan','Karine','170 bis rue Ordener, 75018 Paris','0638995221');
-\end{minted}
-	\caption{Insertion de données dans la table adherents}
+\inputminted{mysql}{code/create_adherents.sql}
+\caption{Création de la table adherents}
+\end{listing}
+
+\begin{listing}[H]
+\inputminted{mysql}{code/create_livres.sql}
+\caption{Création de la table livres}
+\end{listing}
+
+\begin{listing}[H]
+\inputminted{mysql}{code/create_emprunter.sql}
+\caption{Création de la table emprunter}
+\end{listing}
+
+\begin{listing}[H]
+\inputminted{mysql}{code/insert_oeuvres.sql}
+\caption{Insertion de données dans la table oeuvres}
+\end{listing}
+
+\begin{listing}[H]
+\inputminted{mysql}{code/insert_adherents.sql}
+\caption{Insertion de données dans la table adherents}
 \end{listing}
 
 \newpage
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
-INSERT INTO livres VALUES
-	(1,'GF',1),
-	(2,'FOLIO',2),
-	(3,'HACHETTE',3),
-	(4,'GF',4),
-	(5,'FOLIO',5),
-	(6,'FOLIO',6),
-	(7,'GF',7),
-	(8,'FOLIO',8),
-	(9,'HACHETTE',9),
-	(10,'GF',10),
-	(11,'HACHETTE',11),
-	(12,'FOLIO',12),
-	(13,'GF',13),
-	(14,'FOLIO',14),
-	(15,'HACHETTE',15),
-	(16,'HACHETTE',16),
-	(17,'GF',1),
-	(18,'FOLIO',2),
-	(19,'HACHETTE',2),
-	(20,'FOLIO',4),
-	(21,'GF',5),
-	(22,'HACHETTE',4),
-	(23,'HACHETTE',7),
-	(24,'FOLIO',8),
-	(25,'GF',1),
-	(26,'HACHETTE',10),
-	(27,'FOLIO',11),
-	(28,'FOLIO',12),
-	(29,'GF',1),
-	(30,'HACHETTE',14),
-	(31,'FOLIO',17),
-	(32,'GALLIMARD',18);
-\end{minted}
-	\caption{Insertion de données dans la table livres}
+\inputminted{mysql}{code/insert_livres.sql}
+\caption{Insertion de données dans la table livres}
 \end{listing}
+
 \newpage
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
-INSERT INTO emprunter VALUES
-	(1,from_days(to_days(current_date)-350),21,from_days(to_days(current_date)-349),26),
-	(4,from_days(to_days(current_date)-323),21,from_days(to_days(current_date)-310),4),
-	(26,from_days(to_days(current_date)-315),21,from_days(to_days(current_date)-318),9),
-	(25,from_days(to_days(current_date)-311),21,from_days(to_days(current_date)-293),1),
-	(12,from_days(to_days(current_date)-300),21,from_days(to_days(current_date)-1290),7),
-	(20,from_days(to_days(current_date)-283),21,from_days(to_days(current_date)-282),27),
-	(10,from_days(to_days(current_date)-273),21,from_days(to_days(current_date)-250),7),
-	(4,from_days(to_days(current_date)-232),14,from_days(to_days(current_date)-228),12),
-	(24,from_days(to_days(current_date)-226),14,from_days(to_days(current_date)-220),26),
-	(8,from_days(to_days(current_date)-201),14,from_days(to_days(current_date)-183),13),
-	(6,from_days(to_days(current_date)-199),14,from_days(to_days(current_date)-194),3),
-	(10,from_days(to_days(current_date)-169),14,from_days(to_days(current_date)-157),8),
-	(1,from_days(to_days(current_date)-153),14,from_days(to_days(current_date)-142),3),
-	(15,from_days(to_days(current_date)-146),14,from_days(to_days(current_date)-138),10),
-	(1,from_days(to_days(current_date)-106),14,from_days(to_days(current_date)-101),2),
-	(4,from_days(to_days(current_date)-103),14,from_days(to_days(current_date)-93),5),
-	(18,from_days(to_days(current_date)-86),14,from_days(to_days(current_date)-79),3),
-	(8,from_days(to_days(current_date)-76),14,from_days(to_days(current_date)-70),18),
-	(2,from_days(to_days(current_date)-37),14,from_days(to_days(current_date)-28),4),
-	(1,from_days(to_days(current_date)-28),14,from_days(to_days(current_date)-23),1),
-	(3,from_days(to_days(current_date)-21),14,from_days(to_days(current_date)-17),3),
-	(20,from_days(to_days(current_date)-24),14,from_days(to_days(current_date)-8),9),
-	(21,from_days(to_days(current_date)-23),14,from_days(to_days(current_date)-11),14),
-	(2,from_days(to_days(current_date)-10),14, NULL,28),
-	(9,from_days(to_days(current_date)-10),14, NULL,28),
-	(14,from_days(to_days(current_date)-9),14, NULL,1),
-	(16,from_days(to_days(current_date)-9),14, NULL,1),
-	(5,from_days(to_days(current_date)-5),14, NULL,16),
-	(29,from_days(to_days(current_date)-395),14, NULL,27),
-	(11,from_days(to_days(current_date)-30),14, NULL,22),
-	(31,from_days(to_days(current_date)-1),14, NULL,20),
-	(21,from_days(to_days(current_date)-1),14, NULL,20),
-	(32,from_days(to_days(current_date)-1),14, NULL,20);
-\end{minted}
-	\caption{Insertion de données dans la table emprunter}
+\inputminted{mysql}{code/insert_emprunter.sql}
+\caption{Insertion de données dans la table emprunter}
 \end{listing}
 
 
 
 \subsection{Nombres de tuples après l'execution du script:}
-Pour la table oeuvres :
 
+\begin{center}
+\begin{minipage}{0.45\linewidth}
+Table oeuvres
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
+\begin{minted}{mysql}
 SELECT COUNT(*) FROM `biblio`.`oeuvres`;
 \end{minted}
 
-	\begin{minted}[bgcolor=bgconsole]{console}
+\begin{minted}[bgcolor=bgconsole]{console}
 +----------+
 | COUNT(*) |
 +----------+
@@ -248,13 +127,13 @@ SELECT COUNT(*) FROM `biblio`.`oeuvres`;
 \end{minted}
 	\caption{Nombre de tuples dans la table oeuvres}
 \end{listing}
-
-Pour la table adherents :
+\end{minipage} \begin{minipage}{0.45\linewidth}
+Table adherents :
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
+\begin{minted}{mysql}
 SELECT COUNT(*) FROM `biblio`.`adherents`;
 \end{minted}
-	\begin{minted}[bgcolor=bgconsole]{console}
+\begin{minted}[bgcolor=bgconsole]{console}
 +----------+
 | COUNT(*) |
 +----------+
@@ -262,133 +141,153 @@ SELECT COUNT(*) FROM `biblio`.`adherents`;
 +----------+
 1 row in set (0,04 sec)
 \end{minted}
-	\caption{Nombre de tuples dans la table adherants}
+\caption{Nombre de tuples dans la table adherants}
 \end{listing}
+\end{minipage}
 
-Pour la table livres :
+\begin{minipage}{0.45\linewidth}
+Table livres :
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
-	SELECT COUNT(*) FROM `biblio`.`livres`;
-	\end{minted}
-	\begin{minted}[bgcolor=bgconsole]{console}
-	+----------+
-	| COUNT(*) |
-	+----------+
-	|       32 |
-	+----------+
-	1 row in set (0,01 sec)
-	\end{minted}
-	\caption{Nombre de tuples dans la table livres}
-\end{listing}
-Pour la table emprunter :
-
-\begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
-	SELECT COUNT(*) FROM `biblio`.`emprunter`;
-	\end{minted}
-	\begin{minted}[bgcolor=bgconsole]{console}
-	+----------+
-	| COUNT(*) |
-	+----------+
-	|       33 |
-	+----------+
-	1 row in set (0,05 sec)	
-	\end{minted}
-	\caption{Nombre de tuples dans la table emprunter}
-\end{listing}
-\textbf{Ainsi pour obtenir le nombre totale de Tuple on fait :}
-\begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
-	SELECT 
-		(SELECT COUNT(*) FROM `biblio`.`oeuvres`) 
-		+
-		(SELECT COUNT(*) FROM `biblio`.`adherents`)
-		+
-		(SELECT COUNT(*) FROM `biblio`.`livres`)
-		+
-		(SELECT COUNT(*) FROM `biblio`.`emprunter`)
-		AS `Nombres de tuples`;
-	\end{minted}
-	\begin{minted}[bgcolor=bgconsole]{console}
-	+-------------------+
-	| Nombres de tuples |
-	+-------------------+
-	|               113 |
-	+-------------------+
-	1 row in set (0,80 sec)
-	\end{minted}
-	\caption{Nombres de tuples (enregistrements) totale dans la base de donné}
-\end{listing}
-
-\subsection{Nombre d'attribut :}
-\begin{itemize}
-	\item Pour la table oeuvres :
-	      \begin{listing}[H]
-		      \begin{minted}[bgcolor=bgcode]{mysql}
-	DESCRIBE `biblio`.`oeuvres`;
-	\end{minted}
-		      \begin{minted}[bgcolor=bgconsole]{console}
-	+--------+--------------+------+-----+---------+----------------+
-	| Field  | Type         | Null | Key | Default | Extra          |
-	+--------+--------------+------+-----+---------+----------------+
-	| NO     | int          | NO   | PRI | NULL    | auto_increment |
-	| titre  | varchar(150) | NO   |     | NULL    |                |
-	| auteur | varchar(100) | YES  |     | NULL    |                |
-	| annee  | int          | YES  |     | NULL    |                |
-	| genre  | varchar(30)  | YES  |     | NULL    |                |
-	+--------+--------------+------+-----+---------+----------------+
-	5 rows in set (0,02 sec)
-	\end{minted}
-		      \caption{Les 5 attributs de la tables oeuvre}
-	      \end{listing}
-	      On a donc 5 attributs pour la table oeuvre.
-
-	\item Pour la table adherents :
-	      \begin{listing}[H]
-
-		      \begin{minted}[bgcolor=bgcode]{mysql}
-	DESCRIBE `biblio`.`adherents`;
-	\end{minted}
+\begin{minted}{mysql}
+SELECT COUNT(*) FROM `biblio`.`livres`;
+\end{minted}
 \begin{minted}[bgcolor=bgconsole]{console}
-	+--------+--------------+------+-----+---------+----------------+
-	| Field  | Type         | Null | Key | Default | Extra          |
-	+--------+--------------+------+-----+---------+----------------+
-	| NA     | int          | NO   | PRI | NULL    | auto_increment |
-	| nom    | varchar(30)  | NO   |     | NULL    |                |
-	| prenom | varchar(30)  | YES  |     | NULL    |                |
-	| adr    | varchar(100) | NO   |     | NULL    |                |
-	| tel    | char(10)     | YES  |     | NULL    |                |
-	+--------+--------------+------+-----+---------+----------------+
-	5 rows in set (0,00 sec)
-	\end{minted}
-		      \caption{Les 5 attributs de la table adhérents}
-	      \end{listing}
-	      Donc on a 5 pour la tables adherents.
-	\item Pour la table livres :
-	      \begin{listing}[H]
-		      \begin{minted}[bgcolor=bgcode]{mysql}
-	DESCRIBE `biblio`.`livres`;
-	\end{minted}
-		      \begin{minted}[bgcolor=bgconsole]{console}
-	+---------+-------------+------+-----+---------+----------------+
-	| Field   | Type        | Null | Key | Default | Extra          |
-	+---------+-------------+------+-----+---------+----------------+
-	| NL      | int         | NO   | PRI | NULL    | auto_increment |
-	| editeur | varchar(50) | YES  |     | NULL    |                |
-	| NO      | int         | NO   | MUL | NULL    |                |
-	+---------+-------------+------+-----+---------+----------------+
-	3 rows in set (0,03 sec)
-	\end{minted}
-		      \caption{Les 3 attributs de la table livres}
-	      \end{listing}
-	      Donc on a 3 attributs por la table livres.
++----------+
+| COUNT(*) |
++----------+
+|       32 |
++----------+
+1 row in set (0,01 sec)
+\end{minted}
+\caption{Nombre de tuples dans la table livres}
+\end{listing}
+\end{minipage} \begin{minipage}{0.45\linewidth}
+Table emprunter :
+\begin{listing}[H]
+\begin{minted}{mysql}
+SELECT COUNT(*) FROM `biblio`.`emprunter`;
+\end{minted}
+\begin{minted}[bgcolor=bgconsole]{console}
++----------+
+| COUNT(*) |
++----------+
+|       33 |
++----------+
+1 row in set (0,05 sec)	
+\end{minted}
+\caption{Nombre de tuples dans la table emprunter}
+\end{listing}	
+\end{minipage}
 
-	\item Pour la table emprunter :
-	      \begin{listing}[H]
-		      \begin{minted}[bgcolor=bgcode]{mysql}
+\textbf{Ainsi pour obtenir le nombre totale de Tuple on fait :}
+
+\begin{minipage}{0.8\linewidth}
+\begin{listing}[H]
+\begin{minted}{mysql}
+SELECT 
+	(SELECT COUNT(*) FROM `biblio`.`oeuvres`) 
+	+
+	(SELECT COUNT(*) FROM `biblio`.`adherents`)
+	+
+	(SELECT COUNT(*) FROM `biblio`.`livres`)
+	+
+	(SELECT COUNT(*) FROM `biblio`.`emprunter`)
+	AS `Nombres de tuples`;
+\end{minted}
+\begin{minted}[bgcolor=bgconsole]{console}
++-------------------+
+| Nombres de tuples |
++-------------------+
+|               113 |
++-------------------+
+1 row in set (0,80 sec)
+\end{minted}
+\caption{Nombres de tuples (enregistrements) totale dans la base de donné}
+\end{listing}	
+\end{minipage}
+\end{center}
+
+
+\subsection{Nombre d'attribut dans chaque table}
+
+Pour trouver le nombre d'attribut de chaque table on vas utiliser la commande \mintinline{mysql}{DESCRIBE}
+\begin{center}
+\begin{minipage}{0.8\linewidth}
+Table oeuvres : 5 attributs
+\begin{listing}[H]
+\begin{minted}{mysql}
+DESCRIBE `biblio`.`oeuvres`;
+\end{minted}
+\begin{minted}[bgcolor=bgconsole]{console}
++--------+--------------+------+-----+---------+----------------+
+| Field  | Type         | Null | Key | Default | Extra          |
++--------+--------------+------+-----+---------+----------------+
+| NO     | int          | NO   | PRI | NULL    | auto_increment |
+| titre  | varchar(150) | NO   |     | NULL    |                |
+| auteur | varchar(100) | YES  |     | NULL    |                |
+| annee  | int          | YES  |     | NULL    |                |
+| genre  | varchar(30)  | YES  |     | NULL    |                |
++--------+--------------+------+-----+---------+----------------+
+5 rows in set (0,02 sec)
+\end{minted}
+\caption{Les 5 attributs de la tables oeuvre}
+\end{listing}
+\end{minipage}
+
+
+\begin{minipage}{0.8\linewidth}
+Table adherents : 5 attributs.
+\begin{listing}[H]
+\begin{minted}{mysql}
+DESCRIBE `biblio`.`adherents`;
+\end{minted}
+\begin{minted}[bgcolor=bgconsole]{console}
++--------+--------------+------+-----+---------+----------------+
+| Field  | Type         | Null | Key | Default | Extra          |
++--------+--------------+------+-----+---------+----------------+
+| NA     | int          | NO   | PRI | NULL    | auto_increment |
+| nom    | varchar(30)  | NO   |     | NULL    |                |
+| prenom | varchar(30)  | YES  |     | NULL    |                |
+| adr    | varchar(100) | NO   |     | NULL    |                |
+| tel    | char(10)     | YES  |     | NULL    |                |
++--------+--------------+------+-----+---------+----------------+
+5 rows in set (0,00 sec)
+\end{minted}
+\caption{Les 5 attributs de la table adhérents}
+\end{listing}
+\end{minipage}	
+
+\vspace*{20pt}
+
+\begin{minipage}{0.8\linewidth}
+Table livres : 3 attributs
+\begin{listing}[H]
+\begin{minted}{mysql}
+DESCRIBE `biblio`.`livres`;
+\end{minted}
+\begin{minted}[bgcolor=bgconsole]{console}
++---------+-------------+------+-----+---------+----------------+
+| Field   | Type        | Null | Key | Default | Extra          |
++---------+-------------+------+-----+---------+----------------+
+| NL      | int         | NO   | PRI | NULL    | auto_increment |
+| editeur | varchar(50) | YES  |     | NULL    |                |
+| NO      | int         | NO   | MUL | NULL    |                |
++---------+-------------+------+-----+---------+----------------+
+3 rows in set (0,03 sec)
+\end{minted}
+\caption{Les 3 attributs de la table livres}
+\end{listing}
+\end{minipage}
+
+\vspace*{20pt}
+
+\begin{minipage}{0.8\linewidth}
+Table emprunter : 5 attributs
+\begin{listing}[H]
+\begin{minted}{mysql}
 DESCRIBE `biblio`.`emprunter`;
 \end{minted}
-		      \begin{minted}[bgcolor=bgconsole]{console}
+\begin{minted}[bgcolor=bgconsole]{console}
 +----------+------+------+-----+---------+-------+
 | Field    | Type | Null | Key | Default | Extra |
 +----------+------+------+-----+---------+-------+
@@ -400,28 +299,40 @@ DESCRIBE `biblio`.`emprunter`;
 +----------+------+------+-----+---------+-------+
 5 rows in set (0,07 sec)
 \end{minted}
-		      \caption{Les 5 attributs de la table emprunter}
-	      \end{listing}
-	      Donc on a 5 attributs pour la table emprunter
-\end{itemize}
+\caption{Les 5 attributs de la table emprunter}
+\end{listing}
+\end{minipage}
+\end{center}
+
+
+\newpage
 \subsection{Liste des clé Primaire}
 
 Pour trouver les clé primaire on vas utiliser la requête suivante :
 
+\begin{center}
+\begin{minipage}{0.8\linewidth}
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
-SELECT COLUMN_NAME AS PRIMARY_KEY
-FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_SCHEMA = 'biblio'
-AND TABLE_NAME = '<nom_table>' -- Nom de la tables
-AND COLUMN_KEY = 'PRI';
+\begin{minted}{mysql}
+SELECT 
+    COLUMN_NAME AS PRIMARY_KEY
+FROM
+    INFORMATION_SCHEMA.COLUMNS
+WHERE
+    TABLE_SCHEMA = 'biblio'
+        AND TABLE_NAME = '<nom_table>' -- nom de la table
+        AND COLUMN_KEY = 'PRI';
 \end{minted}
-	\caption{requête pour trouver les clés primaire}
-\end{listing}
+	\caption{Requête pour trouver les clés primaire}
+\end{listing}	
+\end{minipage}
+\end{center}
+
+\vspace*{20pt}
+\begin{minipage}{0.4\linewidth}
 Pour la table oeuvres : NO
 \begin{listing}[H]
-
-	\begin{minted}[bgcolor=bgconsole]{console}
+\begin{minted}[bgcolor=bgconsole]{console}
 +-------------+
 | PRIMARY_KEY |
 +-------------+
@@ -431,10 +342,11 @@ Pour la table oeuvres : NO
 \end{minted}
 	\caption{Clé primaire de la table oeuvres}
 \end{listing}
+\end{minipage}\hfill
+\begin{minipage}{0.4\linewidth}
 Pour la table adherents : NA
-
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgconsole]{console}
+\begin{minted}[bgcolor=bgconsole]{console}
 +-------------+
 | PRIMARY_KEY |
 +-------------+
@@ -444,10 +356,13 @@ Pour la table adherents : NA
 \end{minted}
 	\caption{Clé primaire de la table adherents}
 \end{listing}
-Pour la table livres : NL
+\end{minipage}
 
+\begin{center}
+\begin{minipage}{0.5\linewidth}
+Pour la table livres : NL
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgconsole]{console}
+\begin{minted}[bgcolor=bgconsole]{console}
 +-------------+
 | PRIMARY_KEY |
 +-------------+
@@ -457,11 +372,13 @@ Pour la table livres : NL
 \end{minted}
 	\caption{Clé primaire de la table livres}
 \end{listing}
+\end{minipage}
 
+\vspace*{20pt}
+\begin{minipage}{0.5\linewidth}
 Pour la table emprunter : NL,dateEmp
-
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgconsole]{console}
+\begin{minted}[bgcolor=bgconsole]{console}
 +-------------+
 | PRIMARY_KEY |
 +-------------+
@@ -471,97 +388,108 @@ Pour la table emprunter : NL,dateEmp
 2 rows in set (0,00 sec)
 \end{minted}
 	\caption{Clé primaire de la table emprunter}
-
 \end{listing}
+\end{minipage}
+\end{center}
 \newpage
+
 \section{Intéraction avec la base de donné}
 
 Avant de commencer on vas crée des vues pour faciliter les recherches et la manipulation de la base de donner.
 
 
-\textbf{Vue Livres - Oeuvres} : permet de visualier les relation entres les deux tables
+\paragraph{Vue: Livres\_Oeuvres: } Pour une meilleur visualisation des livres
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
+\begin{minted}{mysql}
 CREATE 
-	ALGORITHM = UNDEFINED 
-	DEFINER = `root`@`localhost` 
-	SQL SECURITY DEFINER
+    ALGORITHM = UNDEFINED 
+    DEFINER = `root`@`localhost` 
+    SQL SECURITY DEFINER
 VIEW `Livres_Oeuvres` AS
-	SELECT 
-		`livres`.`NL` AS `NL`,
-		`oeuvres`.`NO` AS `NO`,
-		`oeuvres`.`titre` AS `titre`,
-		`oeuvres`.`auteur` AS `auteur`,
-		`livres`.`editeur` AS `editeur`,
-		`oeuvres`.`annee` AS `annee`,
-		`oeuvres`.`genre` AS `genre`
-	FROM
-		(`livres`
-		JOIN `oeuvres` ON ((`livres`.`NO` = `oeuvres`.`NO`)))
-	ORDER BY `livres`.`NL`;
+    SELECT 
+        `livres`.`NL` AS `NL`,
+        `oeuvres`.`NO` AS `NO`,
+        `oeuvres`.`titre` AS `titre`,
+        `oeuvres`.`auteur` AS `auteur`,
+        `livres`.`editeur` AS `editeur`,
+        `oeuvres`.`annee` AS `annee`,
+        `oeuvres`.`genre` AS `genre`
+    FROM
+        (`livres`
+        JOIN `oeuvres` ON ((`livres`.`NO` = `oeuvres`.`NO`)))
+    ORDER BY `livres`.`NL`
 \end{minted}
 	\caption{Vue Livres\_Oeuvres}
 \end{listing}
-\textbf{Vue Emprunter - Adherent } : pour visualiser les adhérent qui on emprunter des livres
 
+\textbf{Vue: Adherent\_Emprunt} : Pour visualiser les empreunt fait par les adherents ou les livres emprunter
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
+\begin{minted}{mysql}
 CREATE 
     ALGORITHM = UNDEFINED 
     DEFINER = `root`@`localhost` 
     SQL SECURITY DEFINER
 VIEW `Adherent_Emprunt` AS
-SELECT 
-    `emprunter`.`NL` AS `NL`,
-    `emprunter`.`dateEmp` AS `dateEmp`,
-    `emprunter`.`dureeMax` AS `dureeMax`,
-    `emprunter`.`dateRet` AS `dateRet`,
-    `adherents`.`NA` AS `NA`,
-    `adherents`.`nom` AS `nom`,
-    `adherents`.`prenom` AS `prenom`
-FROM
-    (`emprunter`
-    JOIN `adherents`)
-WHERE
-    (`emprunter`.`NA` = `adherents`.`NA`)
-ORDER BY `emprunter`.`NL` , `emprunter`.`dateEmp`
+    SELECT 
+        `emprunter`.`NL` AS `NL`,
+        `emprunter`.`dateEmp` AS `dateEmp`,
+        `emprunter`.`dureeMax` AS `dureeMax`,
+        `emprunter`.`dateRet` AS `dateRet`,
+        `adherents`.`NA` AS `NA`,
+        `adherents`.`nom` AS `nom`,
+        `adherents`.`prenom` AS `prenom`
+    FROM
+        (`emprunter`
+        JOIN `adherents`)
+    WHERE
+        (`emprunter`.`NA` = `adherents`.`NA`)
+    ORDER BY `emprunter`.`NL` , `emprunter`.`dateEmp`
 \end{minted}
 	\caption{Vue Adherent\_emprunt}
 \end{listing}
-\textbf{Vue Livre - Oeuvre - Adherent - Emprunt }: Pour une vue synthétisant les relation entres les 4  tables;
+
+\newpage
+\paragraph{Vue: Livre\_Oeuvre\_Adherent\_Emprunt }: Pour une vue synthétisant les relation entres les 4  tables;
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
+\begin{minted}{mysql}
 CREATE 
-    ALGORITHM = UNDEFINED 
-    DEFINER = `root`@`localhost` 
-    SQL SECURITY DEFINER
+	ALGORITHM = UNDEFINED 
+	DEFINER = `root`@`localhost` 
+	SQL SECURITY DEFINER
 VIEW `Livre_Oeuvres_Adherent_Emprunt` AS
-    SELECT 
-        `Adherent_Emprunt`.`dateEmp` AS `dateEmp`,
-        `Adherent_Emprunt`.`dateRet` AS `dateRet`,
-        `Livres_Oeuvres`.`NL` AS `NL`,
-        `Livres_Oeuvres`.`titre` AS `titre`,
+	SELECT 
+		`Adherent_Emprunt`.`dateEmp` AS `dateEmp`,
+		`Adherent_Emprunt`.`dateRet` AS `dateRet`,
+		`Adherent_Emprunt`.`dureeMax` AS `dureeMax`,
+		`Livres_Oeuvres`.`NL` AS `NL`,
+		`Livres_Oeuvres`.`titre` AS `titre`,
+		`Livres_Oeuvres`.`auteur` AS `auteur`,
+		`Livres_Oeuvres`.`editeur` AS `editeur`,
 		`Adherent_Emprunt`.`NA` AS `NA`,
-        `Adherent_Emprunt`.`nom` AS `nom`,
-        `Adherent_Emprunt`.`prenom` AS `prenom`
-    FROM
-        (`Livres_Oeuvres`
-        JOIN `Adherent_Emprunt` ON ((`Livres_Oeuvres`.`NL` = `Adherent_Emprunt`.`NL`)))
-ORDER BY `Adherent_Emprunt`.`dateEmp` , `Livres_Oeuvres`.`NL`
+		`Adherent_Emprunt`.`nom` AS `nom`,
+		`Adherent_Emprunt`.`prenom` AS `prenom`
+	FROM
+		(`Livres_Oeuvres`
+		JOIN `Adherent_Emprunt` ON ((`Livres_Oeuvres`.`NL` = `Adherent_Emprunt`.`NL`)))
+	ORDER BY `Adherent_Emprunt`.`dateEmp` , `Livres_Oeuvres`.`NL`
 \end{minted}
 	\caption{Vue reliant les 4 tables}
 \end{listing}
-\subsection{Quels sont les livres actuellement empruntés ?}
 
+\subsection{Quels sont les livres actuellement empruntés ?}
 Ce sont les livre qui ne sont pas encore retourné à la librairie donc dateRet=NULL
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
-SELECT 	DISTINCT(emprunter.NL),titre,auteur,editeur,annee 
-		FROM Livres_Oeuvres
-		INNER JOIN emprunter 
-		ON emprunter.NL=Livres_Oeuvres.NL AND dateRet IS NULL ORDER BY NL;
+	\begin{minted}{mysql}
+SELECT DISTINCT
+	(emprunter.NL), titre, auteur, editeur, annee
+FROM
+	Livres_Oeuvres
+		INNER JOIN
+	emprunter ON emprunter.NL = Livres_Oeuvres.NL
+		AND dateRet IS NULL
+ORDER BY NL;
 \end{minted}
-	\begin{minted}[bgcolor=bgconsole]{console}
+\begin{minted}[bgcolor=bgconsole]{console}
 +----+----------------------------+------------------------+-----------+-------+
 | NL | titre                      | auteur                 | editeur   | annee |
 +----+----------------------------+------------------------+-----------+-------+
@@ -579,25 +507,35 @@ SELECT 	DISTINCT(emprunter.NL),titre,auteur,editeur,annee
 \end{minted}
 	\caption{Liste des livres qui sont actuellement emprunter}
 \end{listing}
-\subsection{Quels sont les livres empruntés par Jeannette Lecoeur ? Vérifier dans
-	la réponse qu'il n'y a pas d'homonymes.}
+
+\subsection{Les livres empruntés par Jeannette Lecoeur. Vérification des possible homonymes.}
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
-SELECT * FROM biblio.Livre_Oeuvres_Adherent_Emprunt WHERE nom='Lecoeur' and prenom='Jeannette';
+\begin{minted}{mysql}
+SELECT 
+	*
+FROM
+	biblio.Livre_Oeuvres_Adherent_Emprunt
+WHERE
+	nom = 'Lecoeur' AND prenom = 'Jeannette';
 \end{minted}
-	\begin{minted}[bgcolor=bgconsole]{console}
+\begin{minted}[bgcolor=bgconsole]{console}
 Empty set (0,00 sec)
 \end{minted}
-	\caption{Livres emprunter par Jeannette Lecoeur}
+\caption{Livres emprunter par Jeannette Lecoeur}
 \end{listing}
 Aucun Résultat!.
-\newpage
+
 Par contre avec : Jeanette Lecoeur
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
-SELECT * FROM biblio.Livre_Oeuvres_Adherent_Emprunt WHERE nom='Lecoeur' and prenom='Jeanette';
+\begin{minted}{mysql}
+SELECT 
+	*
+FROM
+	biblio.Livre_Oeuvres_Adherent_Emprunt
+WHERE
+	nom = 'Lecoeur' AND prenom = 'Jeanette';
 \end{minted}
-	\begin{minted}[bgcolor=bgconsole]{console}
+\begin{minted}[bgcolor=bgconsole]{console}
 +------------+------------+----+----------------------+-----------------+---------+----------+
 | dateEmp    | dateRet    | NL | titre                | auteur          | nom     | prenom   |
 +------------+------------+----+----------------------+-----------------+---------+----------+
@@ -612,11 +550,15 @@ SELECT * FROM biblio.Livre_Oeuvres_Adherent_Emprunt WHERE nom='Lecoeur' and pren
 \end{listing}
 
 \subsection{Quels sont tous les livres empruntés en septembre 2009}
-dateEmp comprise entre '2009-09-01' et '2009-09-30'
+ce sont les livres qui ont dateEmp comprise entre '2009-09-01' et '2009-09-30'
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
-SELECT dateEmp,DISTINCT(NL),titre,auteur FROM biblio.Livre_Oeuvres_Adherent_Emprunt
-WHERE dateEmp BETWEEN '2009-09-01' AND '2009-09-30';
+\begin{minted}{mysql}
+SELECT DISTINCT
+    (NL), dateEmp, titre, auteur
+FROM
+    biblio.Livre_Oeuvres_Adherent_Emprunt
+WHERE
+    dateEmp BETWEEN '2009-09-01' AND '2009-09-30';
 \end{minted}
 	\begin{minted}[bgcolor=bgconsole]{console}
 Empty set (0,00 sec)
@@ -624,13 +566,17 @@ Empty set (0,00 sec)
 	\caption{Livres emprunter en septembre 2009}
 \end{listing}
 \subsection{Tous les adhérents qui ont emprunté un livre de Fedor Dostoievski.}
+
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
-SELECT	dateEmp,NL,titre,auteur,NA,nom,prenom 
-		FROM biblio.Livre_Oeuvres_Adherent_Emprunt 
-		WHERE auteur='Fedor DOSTOIEVSKI';
+\begin{minted}{mysql}
+SELECT 
+	dateEmp, NL, titre, auteur, NA, nom, prenom
+FROM
+	biblio.Livre_Oeuvres_Adherent_Emprunt
+WHERE
+	auteur = 'Fedor DOSTOIEVSKI';
 \end{minted}
-	\begin{minted}[bgcolor=bgconsole]{console}
+\begin{minted}[bgcolor=bgconsole]{console}
 +------------+----+----------------+-------------------+----+--------+--------+
 | dateEmp    | NL | titre          | auteur            | NA | nom    | prenom |
 +------------+----+----------------+-------------------+----+--------+--------+
@@ -641,32 +587,39 @@ SELECT	dateEmp,NL,titre,auteur,NA,nom,prenom
 	\caption{Les adhérent ayant emprunter un livre de Fedor DOSTOIEVSKI}
 \end{listing}
 
-\subsection{ Un nouvel adhérent vient de s’inscrire : Olivier DUPOND, 76, quai de la Loire,
+\subsection{ Insertion du nouvelle adhérent : Olivier DUPOND, 76, quai de la Loire,
 	75019 Paris, téléphone : 0102030405}
 
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
+	\begin{minted}{mysql}
 INSERT INTO `biblio`.`adherents` (`nom`, `prenom`, `adr`, `tel`) 
-	VALUES ('Dupon', 'Olivier', '76 quai de la Loire, 75019 Paris', '0102030405');
-\end{minted}
-	\begin{minted}[bgcolor=bgconsole]{console}
+		VALUES ('Dupon', 'Olivier', '76 quai de la Loire, 75019 Paris', '0102030405');
+	\end{minted}
+\begin{minted}[bgcolor=bgconsole]{console}
 Query OK, 1 row affected (0,18 sec)
 \end{minted}
 	\caption{Insertion du nouveaux adhérent Olivier DUPOND}
 \end{listing}
 
-\subsection{Martine CROZIER vient d’emprunter \og Au coeur des ténèbres\fg{} que vous venez
-	d’ajouter et \og{}Le rouge et le noir\fg{} chez Hachette, livre numéro 23. Faire les mises à jour de la BD.}
+\subsection{Martine CROZIER qui vient d'emprunter le livre 23}
+
+Martine CROZIER vient d’emprunter \og Au coeur des ténèbres\fg{} que vous venez
+	d’ajouter et \og{}Le rouge et le noir\fg{} chez Hachette, livre numéro 23. 
+Suite à cela on vas faire les mises à jour de la BD.
 
 Pour Faire cela nos allons faire les requettes suivantes dans l'ordre
-\begin{enumerate}
 
-	\item  Chercher le NA de Martine CROZIER,
-	      \begin{listing}[H]
-		      \begin{minted}[bgcolor=bgcode]{mysql}
-SELECT * FROM adherents WHERE nom='Crozier' and prenom='Martine';
+\paragraph{Chercher le NA de Martine CROZIER},
+\begin{listing}[H]
+\begin{minted}{mysql}
+SELECT 
+    *
+FROM
+    adherents
+WHERE
+    nom = 'Crozier' AND prenom = 'Martine';
 \end{minted}
-		      \begin{minted}[bgcolor=bgconsole]{console}
+\begin{minted}[bgcolor=bgconsole]{console}
 +----+---------+---------+-----------------------------------------+------------+
 | NA | nom     | prenom  | adr                                     | tel        |
 +----+---------+---------+-----------------------------------------+------------+
@@ -674,18 +627,23 @@ SELECT * FROM adherents WHERE nom='Crozier' and prenom='Martine';
 +----+---------+---------+-----------------------------------------+------------+
 1 row in set (0,01 sec)
 \end{minted}
-		      \caption{Recherche du NA de Martine Crozier}
-	      \end{listing}
+\caption{Recherche du NA de Martine Crozier}
+\end{listing}
 
-	\item Trouver les deux Livres à emprunter
-	      \begin{listing}[H]
-		      \begin{minted}[bgcolor=bgcode]{mysql}
-SELECT * FROM biblio.Livres_Oeuvres
-	WHERE titre='Au coeur des ténèbres' 
-	OR 
-	(titre='Le rouge et le noir' AND editeur='Hachette' AND NL=23);
+\subsubsection{Trouver les NL des deux Livres à emprunter}
+\begin{listing}[H]
+\begin{minted}{mysql}
+SELECT 
+    *
+FROM
+    biblio.Livres_Oeuvres
+WHERE
+    titre = 'Au coeur des ténèbres'
+        OR (titre = 'Le rouge et le noir'
+        AND editeur = 'Hachette'
+        AND NL = 23);
 \end{minted}
-		      \begin{minted}[bgcolor=bgconsole]{console}
+\begin{minted}[bgcolor=bgconsole]{console}
 +----+----+-------------------------+---------------+----------+-------+-------+
 | NL | NO | titre                   | auteur        | editeur  | annee | genre |
 +----+----+-------------------------+---------------+----------+-------+-------+
@@ -694,40 +652,44 @@ SELECT * FROM biblio.Livres_Oeuvres
 +----+----+-------------------------+---------------+----------+-------+-------+
 2 rows in set (0,00 sec)
 \end{minted}
-		      \caption{Recherche des NL des livres que Crozier veut emprunter}
-	      \end{listing}
+\caption{Recherche des NL des livres que Crozier veut emprunter}
+\end{listing}
 
-	\item Insértion du  NA de Crozier , le NL des livres à emprunter,la date d'emprunt dateEmp et la durée maximum dureeMax d'emprunt.
-	      \begin{listing}[H]
-		      \begin{minted}[bgcolor=bgcode]{mysql}
+\paragraph{Mise à jours de la BD : } On insere les doné dans la table emprunter:
+\begin{enumerate}
+	\item le NA de CROZIER 7
+	\item les NL des deux livres 31 et 23
+	\item la dateEmp qui seront 2022-06-28
+	\item la dureeMax qui sera de 14 jours
+\end{enumerate}
+\begin{listing}[H]
+\begin{minted}{mysql}
 INSERT INTO `biblio`.`emprunter` (`NL`, `dateEmp`, `dureeMax`, `NA`) 
 	VALUES 
 		('31', '2022-06-28', '14', '7'),
 		('23', '2022-06-28', '14', '7');
 \end{minted}
-		      \begin{minted}[bgcolor=bgconsole]{console}
+\begin{minted}[bgcolor=bgconsole]{console}
 	Query OK, 2 rows affected (0,17 sec)
 	Records: 2  Duplicates: 0  Warnings: 0
 \end{minted}
-		      \caption{Insertion de Martine CROZIER et des livres qu'elle emprunte dans la table emprunter}
-	      \end{listing}
-\end{enumerate}
+\caption{Insertion de Martine CROZIER et des livres qu'elle emprunte dans la table emprunter}
+\end{listing}
 
 
-\subsection{ M. Cyril FREDERIC ramène les livres qu’il a empruntés. Faire la mise à jour de
-	la BD.}
-\begin{enumerate}
-	\item On cherche les livres qu'il a emprunter
-	      \begin{listing}[H]
-		      \begin{minted}[bgcolor=bgcode]{mysql}
+\subsection{ M. Cyril FREDERIC ramène les livres qu’il a empruntés.}
+\subsubsection{On cherche les livres qu'il a emprunter}	      
+
+\begin{listing}[H]
+\begin{minted}{mysql}
 SELECT 
-		*
+    *
 FROM
-	biblio.Livre_Oeuvres_Adherent_Emprunt
-	WHERE 
-		nom='Frederic' AND prenom='Cyril';
+    biblio.Livre_Oeuvres_Adherent_Emprunt
+WHERE
+    nom = 'Frederic' AND prenom = 'Cyril';
 \end{minted}
-		      \begin{minted}[bgcolor=bgconsole]{console}
+\begin{minted}[bgcolor=bgconsole]{console}
 +------------+---------+----+----------------+-------------+----+----------+--------+
 | dateEmp    | dateRet | NL | titre          | auteur      | NA | nom      | prenom |
 +------------+---------+----+----------------+-------------+----+----------+--------+
@@ -736,40 +698,51 @@ FROM
 +------------+---------+----+----------------+-------------+----+----------+--------+
 2 rows in set (0,00 sec)
 \end{minted}
-		      \caption{Recherche des livres que M. Cyril FREDERIC a empreunté}
-	      \end{listing}
+\caption{Recherche des livres que M. Cyril FREDERIC a emprunté}
+\end{listing}
 
-	      Ainsi on a les deux clé primire pour mettre à jour la table emprunt : (2,2022-06-17) et (9,2022-06-17)
-
-	\item  On met à jour les deux enregitements correspondant avec dateRet='2022-06-28'
-	      \begin{listing}[H]
-		      \begin{minted}[bgcolor=bgcode]{mysql}
-UPDATE `biblio`.`emprunter` SET `dateRet` = '2022-06-28' 
-	WHERE (`NL` = '2') and (`dateEmp` = '2022-06-17');
+Ainsi on a les deux clé primire pour mettre à jour la table emprunt : \mintinline{mysql}{(2,2022-06-17) et (9,2022-06-17)}
+\subsubsection{On fait la mise à jour}
+On met à jour les deux enregitements correspondant avec \mintinline{mysql}{dateRet='2022-06-28'}
+\begin{listing}[H]
+\begin{minipage}{0.498765\linewidth}
+\begin{minted}{mysql}
+UPDATE `biblio`.`emprunter` 
+SET 
+	`dateRet` = '2022-06-28'
+WHERE
+	(`NL` = '2')
+		AND (`dateEmp` = '2022-06-17');
 \end{minted}
-		      \begin{minted}[bgcolor=bgconsole]{console}
+\begin{minted}[bgcolor=bgconsole]{console}
 Query OK, 1 row affected (0,21 sec)
 Rows matched: 1  Changed: 1  Warnings: 0
 \end{minted}
-		      \begin{minted}[bgcolor=bgconsole]{console}
-UPDATE `biblio`.`emprunter` SET `dateRet` = '2022-06-28' 
-	WHERE (`NL` = '9') and (`dateEmp` = '2022-06-17');
+\end{minipage}
+\begin{minipage}{0.498765\linewidth}
+\begin{minted}{mysql}
+UPDATE `biblio`.`emprunter` 
+SET 
+	`dateRet` = '2022-06-28'
+WHERE
+	(`NL` = '9')
+		AND (`dateEmp` = '2022-06-17');
 \end{minted}
-		      \begin{minted}[bgcolor=bgconsole]{console}
+
+\begin{minted}[bgcolor=bgconsole]{console}
 Query OK, 1 row affected (0,13 sec)
 Rows matched: 1  Changed: 1  Warnings: 0
 \end{minted}
-		      \caption{Mise à jour de la DB quand M. Cyril FREDERIC ramène ces livres}
-	      \end{listing}
-\end{enumerate}
+\end{minipage}
+\caption{Mise à jour de la DB quand M. Cyril FREDERIC ramène ces livres}
+\end{listing}
 
 
-
-\subsection{M. Cyril FREDERIC essaye d’emprunter le livre n°23. Ecrire la requête. Que constatez-vous ?}
+\subsection{M. Cyril FREDERIC qui essaye d’emprunter le livre n°23}
 On sait que le NA de M. Cyril FREDERIC est 28, et il  essaye d'emprunter le livre N° 23 :
 On exécute alors :
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
+	\begin{minted}{mysql}
 INSERT INTO `biblio`.`emprunter` (`NL`, `dateEmp`, `dureeMax`,  `NA`) 
 		VALUES ('23', '2022-06-28', '14', '28');
 \end{minted}
@@ -780,12 +753,11 @@ ERROR 1062 (23000): Duplicate entry '23-2022-06-28' for key 'emprunter.PRIMARY'
 \end{listing}
 On a une erreur qui indique que la  clé primaire dateEmp est dupliquer.
 
-
-\subsection{M. Cyril FREDERIC essaye d’emprunter le livre n°29. Écrire la requête. Que constatez-vous ?}
+\subsection{M. Cyril FREDERIC qui essaye d’emprunter le livre n°29}
 On sait que le NA de M. Cyril FREDERIC est 28, et il  essay d'emprunter le livre N° 29 :
 On exécute alors :
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
+	\begin{minted}{mysql}
 INSERT INTO `biblio`.`emprunter` (`NL`, `dateEmp`, `dureeMax`,  `NA`) 
 		VALUES ('29', '2022-06-28', '14', '28');
 \end{minted}
@@ -797,8 +769,10 @@ INSERT INTO `biblio`.`emprunter` (`NL`, `dateEmp`, `dureeMax`,  `NA`)
 La requête est réussie.
 
 \subsection{Quels sont le ou les auteurs du titre \og Voyage au bout de la nuit \fg}
+\begin{center}
+	\begin{minipage}{0.8\linewidth}
 \begin{listing}[H]
-	\begin{minted}[bgcolor=bgcode]{mysql}
+	\begin{minted}{mysql}
 SELECT * FROM biblio.oeuvres
 		WHERE titre='Voyage au bout de la nuit';
 \end{minted}
@@ -811,14 +785,23 @@ SELECT * FROM biblio.oeuvres
 1 row in set (0,00 sec)
 \end{minted}
 	\caption{Auteur du livre "Voyage au bout de la nuit"}
-\end{listing}
+\end{listing}			
+	\end{minipage}
+\end{center}
 
 
-\subsection{Quels sont les ou les éditeurs du titre \og Narcisse et Goldmund \fg}
+\subsection{Les éditeurs du titre \og Narcisse et Goldmund \fg}
+
+\begin{center}
+\begin{minipage}{0.5\linewidth}
 \begin{listing}[H]
-\begin{minted}[bgcolor=bgcode]{mysql}
-SELECT DISTINCT(`NO`),titre,editeur FROM biblio.Livres_Oeuvres
-	WHERE titre='Narcisse et Goldmund';
+\begin{minted}{mysql}
+SELECT DISTINCT
+    (`NO`), titre, editeur
+FROM
+    biblio.Livres_Oeuvres
+WHERE
+    titre = 'Narcisse et Goldmund';
 \end{minted}
 \begin{minted}[bgcolor=bgconsole]{console}
 +----+----------------------+---------+
@@ -830,15 +813,26 @@ SELECT DISTINCT(`NO`),titre,editeur FROM biblio.Livres_Oeuvres
 \end{minted}
 \caption{Editeur(s) du  titreNarcisse et Goldmund}
 \end{listing}
+\end{minipage}
+\end{center}
 
 
-\subsection{Quels sont les adhérents actuellement en retard ?}
-A CORRIGER OK
+\newpage
+\subsection{Les adhérents qui sont  actuellement en retard}
 Ils onts dépassé la dureeMax et n'on pas encore rendu leur livres.
+
+\begin{center}
+\begin{minipage}{0.75\linewidth}
 \begin{listing}[H]
-\begin{minted}[bgcolor=bgcode]{mysql}
-SELECT * FROM Adherent_Emprunt
-    WHERE current_date>date_add(dateEmp,INTERVAL + dureeMax DAY) AND dateRet IS NULL;
+\begin{minted}{mysql}
+SELECT 
+    *
+FROM
+    Adherent_Emprunt
+WHERE
+    CURRENT_DATE > DATE_ADD(dateEmp,
+        INTERVAL + dureeMax DAY)
+        AND dateRet IS NULL;
 \end{minted}
 \begin{minted}[bgcolor=bgconsole]{console}
 +----+------------+----------+---------+----+--------+---------+
@@ -851,14 +845,23 @@ SELECT * FROM Adherent_Emprunt
 \end{minted}
 \caption{Les adherent actuellement en retard}
 \end{listing}
+\end{minipage}
+\end{center}
 
-\subsection{Quels sont les livres actuellement en retard ?}
-A CORRIGER OK
+\subsection{Les livres actuellement en retard}
+\begin{center}
+\begin{minipage}{0.75\linewidth}
 \begin{listing}[H]
-\begin{minted}[bgcolor=bgcode]{mysql}
-SELECT dateEmp,dateRet,dureeMax,NL,titre FROM biblio.Livre_Oeuvres_Adherent_Emprunt
-	WHERE current_date>date_add(dateEmp,INTERVAL + dureeMax DAY)
-	AND dateRet IS NULL ORDER BY NA;
+\begin{minted}{mysql}
+SELECT 
+    dateEmp, dateRet, dureeMax, NL, titre
+FROM
+    biblio.Livre_Oeuvres_Adherent_Emprunt
+WHERE
+    CURRENT_DATE > DATE_ADD(dateEmp,
+        INTERVAL + dureeMax DAY)
+        AND dateRet IS NULL
+ORDER BY NA;
 \end{minted}
 \begin{minted}[bgcolor=bgconsole]{console}
 +------------+---------+----------+----+--------------------------+
@@ -871,16 +874,28 @@ SELECT dateEmp,dateRet,dureeMax,NL,titre FROM biblio.Livre_Oeuvres_Adherent_Empr
 \end{minted}
 \caption{Les livres Actuellement en retard}
 \end{listing}
+\end{minipage}
+\end{center}
 
-\subsection{Quels sont les adhérents en retard avec le nombre de livre en retard et la moyenne du nombre de jour de retard.}
+\subsection{les adhérents en retard avec le nombre de livre en retard et la moyenne du nombre de jour de retard.}
+\begin{center}
+\begin{minipage}{0.8\linewidth}
 \begin{listing}[H]
-\begin{minted}[bgcolor=bgcode]{mysql}
-SELECT COUNT(NL) AS Nbr_de_Livre, NA ,nom ,prenom,
-    ROUND(AVG(to_days(current_date())-to_days(date_add(dateEmp,INTERVAL + dureeMax DAY ))))
-	AS Retard_Moyenne
-	FROM biblio.Livre_Oeuvres_Adherent_Emprunt
-	WHERE current_date>date_add(dateEmp,INTERVAL + dureeMax DAY) and dateRet is NULL
-	GROUP BY NA;
+\begin{minted}{mysql}
+SELECT 
+    COUNT(NL) AS Nbr_de_Livre,
+    NA,
+    nom,
+    prenom,
+    ROUND(AVG(TO_DAYS(CURRENT_DATE()) - TO_DAYS(DATE_ADD(dateEmp,
+                        INTERVAL + dureeMax DAY)))) AS Retard_Moyenne
+FROM
+    biblio.Livre_Oeuvres_Adherent_Emprunt
+WHERE
+    CURRENT_DATE > DATE_ADD(dateEmp,
+        INTERVAL + dureeMax DAY)
+        AND dateRet IS NULL
+GROUP BY NA;
 \end{minted}
 \begin{minted}[bgcolor=bgconsole]{console}
 +--------------+----+--------+---------+----------------+
@@ -893,13 +908,18 @@ SELECT COUNT(NL) AS Nbr_de_Livre, NA ,nom ,prenom,
 \end{minted}
 \caption{Adherent en retard avec leur nombre de de livre en retard et retard moyenne}
 \end{listing}
-
+\end{minipage}
+\end{center}
 \subsection{Nombre de livres empruntées par auteur.}
+\begin{center}
+\begin{minipage}{0.5\linewidth}
 \begin{listing}[H]
-\begin{minted}[bgcolor=bgcode]{mysql}
-SELECT COUNT(NL) AS Nbr_Livre,auteur 
-	FROM biblio.Livre_Oeuvres_Adherent_Emprunt 
-	GROUP BY auteur;
+\begin{minted}{mysql}
+SELECT 
+    COUNT(NL) AS Nbr_Livre, auteur
+FROM
+    biblio.Livre_Oeuvres_Adherent_Emprunt
+GROUP BY auteur;
 \end{minted}
 \begin{minted}[bgcolor=bgconsole]{console}
 +-----------+------------------------+
@@ -927,13 +947,18 @@ SELECT COUNT(NL) AS Nbr_Livre,auteur
 \end{minted}
 \caption{Nombre de livre par auteur}
 \end{listing}
-
+\end{minipage}
+\end{center}
 \subsection{Nombre de livres empruntés par éditeur.}
+\begin{center}
+	\begin{minipage}{0.5\linewidth}
 \begin{listing}[H]
-\begin{minted}[bgcolor=bgcode]{mysql}
-SELECT COUNT(NL) AS Nbr_Livres ,editeur
-	FROM biblio.Livre_Oeuvres_Adherent_Emprunt
-	GROUP BY editeur;
+\begin{minted}{mysql}
+SELECT 
+    COUNT(NL) AS Nbr_Livres, editeur
+FROM
+    biblio.Livre_Oeuvres_Adherent_Emprunt
+GROUP BY editeur;
 \end{minted}
 \begin{minted}[bgcolor=bgconsole]{console}
 +------------+-----------+
@@ -948,14 +973,22 @@ SELECT COUNT(NL) AS Nbr_Livres ,editeur
 \end{minted}
 \caption{Nombre de livre par editeur}
 \end{listing}
+\end{minipage}
+\end{center}
 
-\subsection{Durée moyenne des emprunts rendus. On commencera par afficher les durées emprunts rendus.}
-
+\subsection{Durée moyenne des emprunts rendus}
+\subsubsection{Durées emprunts rendus}
+\begin{center}
+\begin{minipage}{0.6\linewidth}
 \begin{listing}[H]
-\begin{minted}[bgcolor=bgcode]{mysql}
-SELECT dateEmp,dateRet,dateRet-dateEmp AS Duree,NL 
-	From emprunter 
-	WHERE dateRet IS NOT NULL ORDER BY Duree;
+\begin{minted}{mysql}
+SELECT 
+    dateEmp, dateRet, dateRet - dateEmp AS Duree, NL
+FROM
+    emprunter
+WHERE
+    dateRet IS NOT NULL
+ORDER BY Duree;
 \end{minted}
 \begin{minted}[bgcolor=bgconsole]{console}
 +------------+------------+--------+----+
@@ -991,13 +1024,22 @@ SELECT dateEmp,dateRet,dateRet-dateEmp AS Duree,NL
 \end{minted}
 \caption{Durée de emprunt rendu}
 \end{listing}
+\end{minipage}
+\end{center}
 On constate qu'il ya une petite erreur dans la DB et on vas l'exclure, en ne considerant les Durée positive pour calucler la moyenne
 Ainsi pour obtenir la durée mmoyenne on fait
 
+\begin{center}
+\begin{minipage}{0.6\linewidth}
 \begin{listing}[H]
-\begin{minted}[bgcolor=bgcode]{mysql}
-SELECT AVG(dateRet-dateEmp) AS DureeMoyenne 
-	FROM emprunter WHERE dateRet IS NOT NULL AND (dateRet-dateEmp >=0);
+\begin{minted}{mysql}
+SELECT 
+    AVG(dateRet - dateEmp) AS DureeMoyenne
+FROM
+    emprunter
+WHERE
+    dateRet IS NOT NULL
+        AND (dateRet - dateEmp >= 0);
 \end{minted}
 \begin{minted}[bgcolor=bgconsole]{console}
 +--------------+
@@ -1006,25 +1048,31 @@ SELECT AVG(dateRet-dateEmp) AS DureeMoyenne
 |           21 |
 +--------------+
 1 row in set (0.00 sec)
-
 \end{minted}
 \caption{Durée Moyenne des emprunt rendu}
 \end{listing}
+\end{minipage}
+\end{center}
 
 \subsection{Durée moyenne des retards pour l’ensemble des emprunts.}
+\begin{center}
+\begin{minipage}{0.7\linewidth}
 \begin{listing}[H]
-\begin{minted}[bgcolor=bgcode]{mysql}
-SELECT	ROUND(AVG(CASE
-				WHEN dateRet IS NULL THEN
-					CURRENT_DATE() - dateEmp
-				ELSE dateRet - dateEmp
-			END)) AS Duree_retard
-			FROM emprunter     
-		WHERE ((CASE
-					WHEN dateRet IS NULL THEN CURRENT_DATE() - dateEmp
-					ELSE dateRet - dateEmp
-				END) > dureeMax
-				OR (dateRet - dateEmp) <= dureeMax) and (dateRet - dateEmp)>=0;
+\begin{minted}{mysql}
+SELECT 
+    ROUND(AVG(CASE
+                WHEN dateRet IS NULL THEN CURRENT_DATE() - dateEmp
+                ELSE dateRet - dateEmp
+            END)) AS Duree_retard
+FROM
+    emprunter
+WHERE
+    ((CASE
+        WHEN dateRet IS NULL THEN CURRENT_DATE() - dateEmp
+        ELSE dateRet - dateEmp
+    END) > dureeMax
+        OR (dateRet - dateEmp) <= dureeMax)
+        AND (dateRet - dateEmp) >= 0;
 \end{minted}
 \begin{minted}[bgcolor=bgconsole]{console}
 +--------------+
@@ -1036,19 +1084,26 @@ SELECT	ROUND(AVG(CASE
 \end{minted}
 \caption{Durée moyenne de Retard pour l'ensemble de l'emprunt}
 \end{listing}
+\end{minipage}
+\end{center}
 \subsection{Durée moyenne des retards parmi les seuls retardataires.}
+\begin{center}
+\begin{minipage}{0.7\linewidth}
 \begin{listing}[H]
-\begin{minted}[bgcolor=bgcode]{mysql}
-SELECT	ROUND(AVG(CASE
-				WHEN dateRet IS NULL THEN
-					CURRENT_DATE() - dateEmp
-				ELSE dateRet - dateEmp
-			END)) AS Duree_retard
-			FROM emprunter     
-		WHERE (CASE
-					WHEN dateRet IS NULL THEN CURRENT_DATE() - dateEmp
-					ELSE dateRet - dateEmp
-				END) > dureeMax and (dateRet - dateEmp)>=0;
+\begin{minted}{mysql}
+SELECT 
+    ROUND(AVG(CASE
+                WHEN dateRet IS NULL THEN CURRENT_DATE() - dateEmp
+                ELSE dateRet - dateEmp
+            END)) AS Duree_retard
+FROM
+    emprunter
+WHERE
+    (CASE
+        WHEN dateRet IS NULL THEN CURRENT_DATE() - dateEmp
+        ELSE dateRet - dateEmp
+    END) > dureeMax
+        AND (dateRet - dateEmp) >= 0;
 \end{minted}
 \begin{minted}[bgcolor=bgconsole]{console}
 +--------------+
@@ -1060,4 +1115,6 @@ SELECT	ROUND(AVG(CASE
 \end{minted}
 \caption{Durée moyenne pour les retardataires seulement}
 \end{listing}
+\end{minipage}
+\end{center}
 \end{document}
