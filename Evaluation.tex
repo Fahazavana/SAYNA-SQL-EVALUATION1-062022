@@ -38,25 +38,7 @@
 
 \section{Analyse et correction de la base de données}
 
-\subsection{Chargement et Correction apporté à Biblio\_base.mysql}
-
-Ordonner l'ordre de la création des tables pour eviter les erreur
-suivant :
-
-\begin{itemize}
-	\item Error Code: 1824. Failed to open the referenced table `oeuvres'
-	\item Error Code: 1824. Failed to open the referenced table `adherents'
-	\item Error Code: 1824. Failed to open the referenced table `livres'
-\end{itemize}
-
-
-Ainsi l'ordre de création des tables sera :
-\begin{enumerate}
-	\item oeuvres
-	\item adherants
-	\item livres
-	\item emprunter
-\end{enumerate}
+\subsection{Chargement de Biblio\_base.mysql}
 
 \begin{listing}[H]
 \inputminted{mysql}{code/create_db.sql}
@@ -105,7 +87,79 @@ Ainsi l'ordre de création des tables sera :
 \caption{Insertion de données dans la table emprunter}
 \end{listing}
 
+\subsection{Les corrections aporté}
+    Ordonner l'ordre de la création des tables pour eviter les erreur
+    suivant :
+    
+\begin{itemize}
+    \item Error Code: 1824. Failed to open the referenced table `oeuvres'
+    \item Error Code: 1824. Failed to open the referenced table `adherents'
+    \item Error Code: 1824. Failed to open the referenced table `livres'
+\end{itemize}
 
+
+Ainsi l'ordre de création des tables sera :
+\begin{enumerate}
+    \item oeuvres
+    \item adherants
+    \item livres
+    \item emprunter
+\end{enumerate}
+
+On a aussi deux ligné qui on des dates erroné dans la tables emprunter, dont la date de retour (\mintinline{mysql}{dateRet}) est antérieur  à la
+date d'emprunt (\mintinline{mysql}{dateEmp})
+\begin{listing}[H]
+\begin{minted}{mysql}
+    (26,from_days(to_days(current_date)-315),21,from_days(to_days(current_date)-318),9)
+    (12,from_days(to_days(current_date)-300),21,from_days(to_days(current_date)-1290),7)
+\end{minted}
+\begin{minted}[bgcolor=bgconsole]{console}
+                +----+------------+----------+------------+----+
+                | NL | dateEmp    | dureeMax | dateRet    | NA |
+                +----+------------+----------+------------+----+
+                | 12 | 2021-08-31 |       21 | 2018-12-15 |  7 |
+                | 26 | 2021-08-16 |       21 | 2021-08-13 |  9 |
+                +----+------------+----------+------------+----+
+                2 rows in set (0,00 sec)
+\end{minted}
+\caption{Erreur des enrégistrements dans la BD}
+\end{listing}
+Pour palier ce problème on ava mettre à jours ces deux enréstrement pour être cohérent avec les deux commandes suivantes :
+\begin{center}
+\begin{minipage}{0.5\linewidth}
+\begin{listing}[H]
+\begin{minted}{mysql}
+UPDATE `biblio`.`emprunter` 
+SET 
+    `dateRet` = '2021-12-15'
+WHERE
+    (`NL` = '12')
+        AND (`dateEmp` = '2021-08-31');
+\end{minted}
+\begin{minted}[bgcolor=bgconsole]{console}
+Query OK, 1 row affected (0,13 sec)
+Rows matched: 1  Changed: 1  Warnings: 0    
+\end{minted}
+\begin{minted}{mysql}
+UPDATE `biblio`.`emprunter` 
+SET 
+    `dateRet` = '2021-08-19'
+WHERE
+    (`NL` = '26')
+        AND (`dateEmp` = '2021-08-16');    
+\end{minted}
+\begin{minted}[bgcolor=bgconsole]{console}
+    Query OK, 1 row affected (0,08 sec)
+    Rows matched: 1  Changed: 1  Warnings: 0    
+\end{minted}    
+\caption{Correction des données}
+\end{listing}
+\end{minipage}
+\end{center}
+\subsection{Diagramme EER de biblio}
+\begin{center}
+    \includegraphics[scale=0.6]{EER_Diagram.png}
+\end{center}
 
 \subsection{Nombres de tuples après l'execution du script:}
 
@@ -476,7 +530,8 @@ VIEW `Livre_Oeuvres_Adherent_Emprunt` AS
 	\caption{Vue reliant les 4 tables}
 \end{listing}
 
-\subsection{Quels sont les livres actuellement empruntés ?}
+\textbf{\large Les requête incluant \mintinline{mysql}{CURRENT_DATE()} changent selon la date d'execution du script}
+\subsection{Les livres qui sont actuellement empruntés}
 Ce sont les livre qui ne sont pas encore retourné à la librairie donc dateRet=NULL
 \begin{listing}[H]
 	\begin{minted}{mysql}
@@ -887,7 +942,8 @@ SELECT
     NA,
     nom,
     prenom,
-    ROUND(AVG(TO_DAYS(CURRENT_DATE()) - TO_DAYS(DATE_ADD(dateEmp,
+    ROUND(AVG(DATEDIFF(CURRENT_DATE(),
+                    DATE_ADD(dateEmp,
                         INTERVAL + dureeMax DAY)))) AS Retard_Moyenne
 FROM
     biblio.Livre_Oeuvres_Adherent_Emprunt
@@ -901,10 +957,10 @@ GROUP BY NA;
 +--------------+----+--------+---------+----------------+
 | Nbr_de_Livre | NA | nom    | prenom  | Retard_Moyenne |
 +--------------+----+--------+---------+----------------+
-|            1 | 22 | Rihour | Cécile  |             18 |
-|            1 | 27 | Cornu  | Sylvain |            383 |
+|            1 | 22 | Rihour | Cécile  |             20 |
+|            1 | 27 | Cornu  | Sylvain |            385 |
 +--------------+----+--------+---------+----------------+
-2 rows in set (0.00 sec)
+2 rows in set (0,00 sec)
 \end{minted}
 \caption{Adherent en retard avec leur nombre de de livre en retard et retard moyenne}
 \end{listing}
@@ -978,12 +1034,13 @@ GROUP BY editeur;
 
 \subsection{Durée moyenne des emprunts rendus}
 \subsubsection{Durées emprunts rendus}
+Ce sont les enrégistrement de la table emprunter qui ont \mintinline{mysql}{datRet != NULL}
 \begin{center}
-\begin{minipage}{0.6\linewidth}
+\begin{minipage}{0.7\linewidth}
 \begin{listing}[H]
 \begin{minted}{mysql}
 SELECT 
-    dateEmp, dateRet, dateRet - dateEmp AS Duree, NL
+    dateEmp, dateRet, datediff(dateRet,dateEmp) AS Duree, NL
 FROM
     emprunter
 WHERE
@@ -991,63 +1048,61 @@ WHERE
 ORDER BY Duree;
 \end{minted}
 \begin{minted}[bgcolor=bgconsole]{console}
-+------------+------------+--------+----+
-| dateEmp    | dateRet    | Duree  | NL |
-+------------+------------+--------+----+
-| 2021-08-31 | 2018-12-15 | -29616 | 12 |
-| 2021-08-16 | 2021-08-13 |     -3 | 26 |
-| 2021-09-17 | 2021-09-18 |      1 | 20 |
-| 2021-07-12 | 2021-07-13 |      1 |  1 |
-| 2022-06-06 | 2022-06-10 |      4 |  3 |
-| 2021-11-07 | 2021-11-11 |      4 |  4 |
-| 2022-03-13 | 2022-03-18 |      5 |  1 |
-| 2021-12-10 | 2021-12-15 |      5 |  6 |
-| 2022-04-12 | 2022-04-18 |      6 |  8 |
-| 2021-11-13 | 2021-11-19 |      6 | 24 |
-| 2022-04-02 | 2022-04-09 |      7 | 18 |
-| 2022-02-01 | 2022-02-09 |      8 | 15 |
-| 2022-05-21 | 2022-05-30 |      9 |  2 |
-| 2022-03-16 | 2022-03-26 |     10 |  4 |
-| 2022-06-17 | 2022-06-28 |     11 |  9 |
-| 2022-06-17 | 2022-06-28 |     11 |  2 |
-| 2022-01-09 | 2022-01-21 |     12 | 10 |
-| 2022-06-04 | 2022-06-16 |     12 | 21 |
-| 2021-08-08 | 2021-08-21 |     13 |  4 |
-| 2022-06-03 | 2022-06-19 |     16 | 20 |
-| 2021-12-08 | 2021-12-26 |     18 |  8 |
-| 2022-05-30 | 2022-06-04 |     74 |  1 |
-| 2022-01-25 | 2022-02-05 |     80 |  1 |
-| 2021-08-20 | 2021-09-07 |     87 | 25 |
-| 2021-09-27 | 2021-10-20 |     93 | 10 |
-+------------+------------+--------+----+
++------------+------------+-------+----+
+| dateEmp    | dateRet    | Duree | NL |
++------------+------------+-------+----+
+| 2021-09-17 | 2021-09-18 |     1 | 20 |
+| 2021-07-12 | 2021-07-13 |     1 |  1 |
+| 2021-08-16 | 2021-08-19 |     3 | 26 |
+| 2022-06-06 | 2022-06-10 |     4 |  3 |
+| 2021-11-07 | 2021-11-11 |     4 |  4 |
+| 2022-03-13 | 2022-03-18 |     5 |  1 |
+| 2022-05-30 | 2022-06-04 |     5 |  1 |
+| 2021-12-10 | 2021-12-15 |     5 |  6 |
+| 2022-04-12 | 2022-04-18 |     6 |  8 |
+| 2021-11-13 | 2021-11-19 |     6 | 24 |
+| 2022-04-02 | 2022-04-09 |     7 | 18 |
+| 2022-02-01 | 2022-02-09 |     8 | 15 |
+| 2022-05-21 | 2022-05-30 |     9 |  2 |
+| 2022-03-16 | 2022-03-26 |    10 |  4 |
+| 2022-06-17 | 2022-06-28 |    11 |  9 |
+| 2022-06-17 | 2022-06-28 |    11 |  2 |
+| 2022-01-25 | 2022-02-05 |    11 |  1 |
+| 2022-01-09 | 2022-01-21 |    12 | 10 |
+| 2022-06-04 | 2022-06-16 |    12 | 21 |
+| 2021-08-08 | 2021-08-21 |    13 |  4 |
+| 2022-06-03 | 2022-06-19 |    16 | 20 |
+| 2021-12-08 | 2021-12-26 |    18 |  8 |
+| 2021-08-20 | 2021-09-07 |    18 | 25 |
+| 2021-09-27 | 2021-10-20 |    23 | 10 |
+| 2021-08-31 | 2021-12-15 |   106 | 12 |
++------------+------------+-------+----+
 25 rows in set (0,00 sec)
 \end{minted}
-\caption{Durée de emprunt rendu}
+\caption{Durée Moyen des emprunt rendu}
 \end{listing}
 \end{minipage}
 \end{center}
-On constate qu'il ya une petite erreur dans la DB et on vas l'exclure, en ne considerant les Durée positive pour calucler la moyenne
-Ainsi pour obtenir la durée mmoyenne on fait
+La colonne \mintinline{mysql}{Duree} Represnte les duréé dmoyenne de chaque empreunt rendu.
 
 \begin{center}
 \begin{minipage}{0.6\linewidth}
 \begin{listing}[H]
 \begin{minted}{mysql}
 SELECT 
-    AVG(dateRet - dateEmp) AS DureeMoyenne
+    ROUND(AVG(DATEDIFF(dateRet,dateEmp))) AS DureeMoyenne
 FROM
     emprunter
 WHERE
-    dateRet IS NOT NULL
-        AND (dateRet - dateEmp >= 0);
+    dateRet IS NOT NULL;
 \end{minted}
 \begin{minted}[bgcolor=bgconsole]{console}
 +--------------+
 | DureeMoyenne |
 +--------------+
-|           21 |
+|           13 |
 +--------------+
-1 row in set (0.00 sec)
+1 row in set (0,00 sec)
 \end{minted}
 \caption{Durée Moyenne des emprunt rendu}
 \end{listing}
@@ -1055,62 +1110,65 @@ WHERE
 \end{center}
 
 \subsection{Durée moyenne des retards pour l’ensemble des emprunts.}
+
+Ce-ci inclus meme les emprun rendu attentd, emprunt non rendu
 \begin{center}
-\begin{minipage}{0.7\linewidth}
+\begin{minipage}{0.8\linewidth}
 \begin{listing}[H]
 \begin{minted}{mysql}
 SELECT 
-    ROUND(AVG(CASE
-                WHEN dateRet IS NULL THEN CURRENT_DATE() - dateEmp
-                ELSE dateRet - dateEmp
-            END)) AS Duree_retard
+    ROUND(AVG(CASE -- Emprunt non rendu et rendu
+                WHEN dateRet IS NULL THEN DATEDIFF(CURRENT_DATE(), dateEmp) 
+                ELSE DATEDIFF(dateRet, dateEmp) -- Emprunt rendu
+            END)) AS DureMoyenneRetard
 FROM
     emprunter
 WHERE
-    ((CASE
-        WHEN dateRet IS NULL THEN CURRENT_DATE() - dateEmp
-        ELSE dateRet - dateEmp
+    (CASE -- Emprunt rendu et non rendu en retard
+        WHEN dateRet IS NULL THEN DATEDIFF(CURRENT_DATE(), dateEmp) 
+        ELSE DATEDIFF(dateRet, dateEmp)
     END) > dureeMax
-        OR (dateRet - dateEmp) <= dureeMax)
-        AND (dateRet - dateEmp) >= 0;
+        OR (CASE -- Enprunt rendu ou non pas en retard
+        WHEN dateRet IS NULL THEN DATEDIFF(CURRENT_DATE(), dateEmp)
+        ELSE DATEDIFF(dateRet, dateEmp)
+    END) <= dureeMax;
 \end{minted}
 \begin{minted}[bgcolor=bgconsole]{console}
-+--------------+
-| Duree_retard |
-+--------------+
-|           21 |
-+--------------+
++--------------------+
+| DureeMoyenneRetard |
++--------------------+
+|                 23 |
++--------------------+
 1 row in set (0,00 sec)
 \end{minted}
 \caption{Durée moyenne de Retard pour l'ensemble de l'emprunt}
 \end{listing}
 \end{minipage}
 \end{center}
-\subsection{Durée moyenne des retards parmi les seuls retardataires.}
+\subsection{Durée moyenne des retards pour les retardataire seulement}
 \begin{center}
 \begin{minipage}{0.7\linewidth}
 \begin{listing}[H]
 \begin{minted}{mysql}
 SELECT 
     ROUND(AVG(CASE
-                WHEN dateRet IS NULL THEN CURRENT_DATE() - dateEmp
-                ELSE dateRet - dateEmp
-            END)) AS Duree_retard
+                WHEN dateRet IS NULL THEN DATEDIFF(CURRENT_DATE(),dateEmp)
+                ELSE DATEDIFF(dateRet,dateEmp)
+            END)) AS DureeMoyenneretard
 FROM
     emprunter
 WHERE
     (CASE
-        WHEN dateRet IS NULL THEN CURRENT_DATE() - dateEmp
-        ELSE dateRet - dateEmp
-    END) > dureeMax
-        AND (dateRet - dateEmp) >= 0;
+        WHEN dateRet IS NULL THEN DATEDIFF(CURRENT_DATE(),dateEmp)
+        ELSE DATEDIFF(dateRet,dateEmp)
+    END) > dureeMax;
 \end{minted}
 \begin{minted}[bgcolor=bgconsole]{console}
-+--------------+
-| Duree_retard |
-+--------------+
-|           61 |
-+--------------+
++--------------------+
+| DureeMoyenneretard |
++--------------------+
+|                 99 |
++--------------------+
 1 row in set (0,00 sec)
 \end{minted}
 \caption{Durée moyenne pour les retardataires seulement}
